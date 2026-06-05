@@ -1,0 +1,10 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Konfigo.Domain\Konfigo.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Publo.Postgres" />
+    <PackageReference Include="Scrutor" />
+    <PackageReference Include="System.Linq.Async" />
+  </ItemGroup>
+</Project>

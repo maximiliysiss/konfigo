@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package konfigo.client;
+
+option csharp_namespace = "Konfigo.Client.Grpc";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+service RealtimeConfigGrpcService {
+  rpc GetConfig(GetConfigRequest) returns (GetConfigResponse);
+  rpc IsVersionExists(IsVersionExistRequest) returns (IsVersionExistResponse);
+  rpc CreateVersion(CreateVersionRequest) returns (CreateVersionResponse);
+  rpc StartSubscribe(StartSubscribeRequest) returns (stream SubscriptionEvent);
+}
+
+message GetConfigRequest {
+  string service_id = 1;
+  string version = 2;
+}
+
+message GetConfigResponse {
+  repeated ConfigEntry entries = 1;
+
+  message ConfigEntry {
+    string key = 1;
+    google.protobuf.StringValue value = 2;
+    int32 generation = 3;
+    google.protobuf.Timestamp timestamp = 4;
+  }
+}
+
+message IsVersionExistRequest {
+  string service_id = 1;
+  string version = 2;
+}
+
+message IsVersionExistResponse {
+  google.protobuf.StringValue version_id = 1;
+}
+
+message CreateVersionRequest {
+  string service_id = 1;
+  string version = 2;
+  repeated ClassEntry classes = 3;
+
+  message ClassEntry {
+    string name = 1;
+    google.protobuf.StringValue description = 2;
+    repeated ConfigEntry entries = 3;
+
+    message ConfigEntry {
+      string key = 1;
+      string name = 2;
+      google.protobuf.StringValue description = 3;
+      ValueType value_type = 4;
+      google.protobuf.StringValue enum_values = 5;
+      google.protobuf.StringValue value = 6;
+    }
+  }
+}
+
+message CreateVersionResponse {
+  string version_id = 1;
+}
+
+message StartSubscribeRequest {
+  string service_id = 1;
+  string version_id = 2;
+  google.protobuf.Timestamp timestamp = 3;
+}
+
+message SubscriptionEvent {
+  repeated ConfigEvent events = 1;
+
+  message ConfigEvent {
+    string key = 1;
+    google.protobuf.StringValue value = 2;
+    int32 generation = 3;
+    google.protobuf.Timestamp timestamp = 4;
+  }
+}
+
+enum ValueType {
+  VALUE_TYPE_UNKNOWN = 0;
+  VALUE_TYPE_STRING = 1;
+  VALUE_TYPE_BOOLEAN = 2;
+  VALUE_TYPE_DATE_TIME = 3;
+  VALUE_TYPE_TIME_SPAN = 4;
+  VALUE_TYPE_ENUM = 5;
+  VALUE_TYPE_NUMBER = 6;
+  VALUE_TYPE_ARRAY = 7;
+  VALUE_TYPE_JSON = 8;
+}

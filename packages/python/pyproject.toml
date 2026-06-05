@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "konfigo"
+version = "0.1.0"
+description = "Python client SDK for Konfigo Realtime Config"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "Konfigo" }
+]
+dependencies = []
+
+[project.optional-dependencies]
+grpc = [
+  "grpcio>=1.64",
+  "protobuf>=5",
+]
+dev = [
+  "pytest>=8",
+  "pytest-asyncio>=0.23",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/konfigo"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
