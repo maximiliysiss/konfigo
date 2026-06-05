@@ -1,42 +1,48 @@
-# sv
+# Konfigo Frontend
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+SvelteKit web UI for managing Konfigo services, config versions, and config entries.
 
-## Creating a project
+## Features
 
-If you're seeing this, you've probably already done this step. Congrats!
+- Browse and search registered services
+- View and edit config versions and their entries
+- Set config values with optimistic concurrency (generation-guarded)
+- Role-aware UI — admin actions hidden for developer-role users
+- Real-time Svelte stores backed by the Konfigo REST API
 
-```sh
-# create a new project
-npx sv create my-app
+## Development
+
+```bash
+npm install
+npm run dev        # http://localhost:5173
 ```
 
-To recreate this project with the same configuration:
+Set the backend URL in `.env`:
 
-```sh
-# recreate this project
-npx sv@0.15.0 create --template minimal --types ts --no-install frontend
+```env
+PUBLIC_API_URL=http://localhost:8080
 ```
 
-## Developing
+## Production build
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```sh
+```bash
 npm run build
+npm run preview    # preview the production build locally
 ```
 
-You can preview the production build with `npm run preview`.
+## Docker
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+```bash
+docker build -t konfigo-frontend .
+docker run -p 3000:3000 -e PUBLIC_API_URL=https://your-backend konfigo-frontend
+```
+
+The image uses `@sveltejs/adapter-node` and runs as a plain Node.js server on port 3000.
+
+## Tech stack
+
+| Package | Purpose |
+|---------|---------|
+| SvelteKit | Framework + routing |
+| Tailwind CSS | Utility-first styling |
+| TypeScript | Type safety |
