@@ -32,6 +32,7 @@
 	const showShell = $derived($page.url.pathname !== '/login' && currentUser !== null);
 	const currentPath = $derived($page.url.pathname);
 	const userCanAll = $derived(canAll(currentUser));
+	const currentUserLabel = $derived(currentUser?.email ?? currentUser?.name ?? currentUser?.id ?? '');
 	const signOutHref = $derived(buildBackendUrl('/auth/logout?returnUrl=/login'));
 
 	const navItems = $derived.by(() => {
@@ -104,11 +105,14 @@
 			</div>
 
 			<div class="topbar-auth">
-				<div class="avatar-circle" aria-hidden="true">
-					<svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" aria-hidden="true">
-						<circle cx="8" cy="6" r="2.5" stroke="currentColor" stroke-width="1.5" />
-						<path d="M3 13.5c.8-2 2.7-3.2 5-3.2s4.2 1.2 5 3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-					</svg>
+				<div class="user-identity" title={currentUserLabel}>
+					<div class="avatar-circle" aria-hidden="true">
+						<svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" aria-hidden="true">
+							<circle cx="8" cy="6" r="2.5" stroke="currentColor" stroke-width="1.5" />
+							<path d="M3 13.5c.8-2 2.7-3.2 5-3.2s4.2 1.2 5 3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+						</svg>
+					</div>
+					<span class="user-identity-label">{currentUserLabel}</span>
 				</div>
 				<a class="topbar-signout" href={signOutHref}>
 					<svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" aria-hidden="true">

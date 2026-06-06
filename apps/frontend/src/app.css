@@ -265,9 +265,28 @@
 		border: 1px solid var(--border);
 	}
 
+	.user-identity {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+		min-width: 0;
+		max-width: min(280px, 34vw);
+	}
+
+	.user-identity-label {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		color: var(--text-secondary);
+		font-size: 13px;
+		font-weight: 500;
+	}
+
 	.avatar-circle {
 		width: 34px;
 		height: 34px;
+		flex: 0 0 auto;
 		border-radius: 999px;
 		display: inline-flex;
 		align-items: center;

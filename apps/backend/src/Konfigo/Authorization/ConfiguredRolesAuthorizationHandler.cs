@@ -7,15 +7,17 @@ namespace Konfigo.Authorization;
 
 internal sealed class ConfiguredRolesAuthorizationHandler : AuthorizationHandler<ConfiguredRolesRequirement>
 {
-    private readonly IOptionsMonitor<KonfigoAuthorizationOptions> _options;
+    private readonly IOptionsMonitor<KonfigoAuthorizationOptions> _authorizationOptions;
 
-    public ConfiguredRolesAuthorizationHandler(IOptionsMonitor<KonfigoAuthorizationOptions> options) => _options = options;
+    public ConfiguredRolesAuthorizationHandler(IOptionsMonitor<KonfigoAuthorizationOptions> authorizationOptions)
+        => _authorizationOptions = authorizationOptions;
 
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, ConfiguredRolesRequirement requirement)
     {
-        var roles = _options.CurrentValue.GetRoles(requirement.PolicyKey);
+        var options = _authorizationOptions.CurrentValue;
+        var roles = options.GetRoles(requirement.PolicyKey);
 
-        if (roles.Length > 0 && roles.Any(context.User.IsInRole))
+        if (roles.Length > 0 && roles.Any(role => options.UserHasRole(context.User, role)))
             context.Succeed(requirement);
 
         return Task.CompletedTask;

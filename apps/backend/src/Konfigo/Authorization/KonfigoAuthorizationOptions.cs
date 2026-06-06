@@ -8,7 +8,9 @@ public sealed class KonfigoAuthorizationOptions
 {
     public const string SectionName = "Authorization";
 
-    public Dictionary<string, string[]> Policies { get; init; } = new()
+    public string[] KnownRoleClaimTypes { get; set; } = [ClaimTypes.Role, "role", "roles", "groups", "name"];
+
+    public Dictionary<string, string[]> Policies { get; set; } = new()
     {
         [AuthorizationPolicyNames.CanAll] = ["admin"],
         [AuthorizationPolicyNames.CanChange] = ["developer"],
@@ -31,6 +33,15 @@ public sealed class KonfigoAuthorizationOptions
 
     public string[] GetPermissions(ClaimsPrincipal user) =>
         new[] { AuthorizationPolicyNames.CanAll, AuthorizationPolicyNames.CanChange }
-            .Where(permission => GetRoles(permission).Any(user.IsInRole))
+            .Where(permission => GetRoles(permission).Any(role => UserHasRole(user, role)))
             .ToArray();
+
+    public bool UserHasRole(ClaimsPrincipal user, string role) =>
+        user.IsInRole(role)
+        || user.Identities.Any(identity =>
+            identity.Claims.Any(claim => IsRoleClaim(claim, identity.RoleClaimType) && claim.Value == role));
+
+    private bool IsRoleClaim(Claim claim, string identityRoleClaimType) =>
+        claim.Type == identityRoleClaimType
+        || KnownRoleClaimTypes.Contains(claim.Type);
 }
