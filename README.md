@@ -58,7 +58,7 @@ number for Go module tags when publishing the SDK.
 ### Run with Docker Compose
 
 ```bash
-# Start PostgreSQL, Redis, and local Dex auth
+# Start PostgreSQL, Redis, local Dex auth, and local nginx
 cd apps/backend
 docker compose up -d
 ```
@@ -73,7 +73,8 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`.
+Open `http://localhost:3000` with plain HTTP. Docker Compose starts nginx and
+dependencies only; keep the host `dotnet run` and `npm run dev` processes running.
 
 Local users:
 
@@ -82,8 +83,10 @@ Local users:
 | `admin@konfigo.local` | `admin` | `admin`, `developer` | `canAll`, `canChange` |
 | `developer@konfigo.local` | `developer` | `developer` | `canChange` |
 
-The backend listens on `http://localhost:8080`, Dex on `http://localhost:5556/dex`, and
-the frontend dev server proxies API/auth calls to the backend.
+The backend listens on `http://localhost:8080`, the frontend dev server on
+`http://localhost:5173`, Dex through nginx on `http://localhost:3000/dex`, and nginx on
+`http://localhost:3000`. Use the nginx URL for the web UI so frontend, REST, auth,
+and SignalR requests share one browser origin.
 
 ### Docker images (production)
 

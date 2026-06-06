@@ -1,4 +1,4 @@
-issuer: http://localhost:5556/dex
+issuer: http://localhost:3000/dex
 
 storage:
   type: memory
@@ -15,6 +15,7 @@ staticClients:
     secret: konfigo-local-secret
     redirectURIs:
       - http://localhost:8080/signin-oidc
+      - http://localhost:3000/signin-oidc
       - http://localhost:5173/signin-oidc
 
 enablePasswordDB: true

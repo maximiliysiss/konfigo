@@ -6,7 +6,7 @@
 
 - .NET 10 SDK
 - Node.js 22+
-- Docker (for PostgreSQL, Redis, and Dex)
+- Docker (for PostgreSQL, Redis, Dex, and local nginx)
 
 ### 1. Start infrastructure
 
@@ -15,7 +15,8 @@ cd apps/backend
 docker compose up -d
 ```
 
-This starts PostgreSQL 14 on `:5432`, Redis 7 on `:6379`, and Dex on `http://localhost:5556/dex`.
+This starts PostgreSQL 14 on `:5432`, Redis 7 on `:6379`, Dex through nginx on
+`http://localhost:3000/dex`, and nginx on `http://localhost:3000`.
 
 ### 2. Configure the backend
 
@@ -31,7 +32,7 @@ This starts PostgreSQL 14 on `:5432`, Redis 7 on `:6379`, and Dex on `http://loc
     "Provider": "OpenId",
     "RoleClaimType": "groups",
     "OpenId": {
-      "Authority": "http://localhost:5556/dex",
+      "Authority": "http://localhost:3000/dex",
       "ClientId": "konfigo",
       "ClientSecret": "konfigo-local-secret",
       "RequireHttpsMetadata": false,
@@ -68,12 +69,14 @@ The backend starts on `http://localhost:8080`. Database migrations run automatic
 
 ```bash
 cd apps/frontend
-cp .env.example .env   # set VITE_API_PROXY_TARGET if backend is not on http://localhost:8080
+cp .env.example .env
 npm install
 npm run dev
 ```
 
-The dev server starts on `http://localhost:5173` and proxies API/auth calls to the backend.
+The dev server starts on `http://localhost:5173`. Open `http://localhost:3000` with plain
+HTTP; nginx proxies the frontend dev server plus backend API/auth/SignalR paths through one
+origin.
 
 ## Docker (production)
 
@@ -123,8 +126,8 @@ docker run -p 3000:3000 \
 
 ### Local dependencies with Docker Compose
 
-The repository includes `apps/backend/docker-compose.yml` for external dependencies used by
-locally running backend/frontend processes:
+The repository includes `apps/backend/docker-compose.yml` for external dependencies and the
+local nginx entrypoint used by locally running backend/frontend processes:
 
 Run it from `apps/backend`:
 
@@ -132,8 +135,10 @@ Run it from `apps/backend`:
 docker compose up -d
 ```
 
-It starts PostgreSQL, Redis, and Dex only. The backend runs on the host at
-`http://localhost:8080`, and the frontend dev server runs on `http://localhost:5173`.
+It starts PostgreSQL, Redis, Dex, and nginx. The backend runs on the host at
+`http://localhost:8080`, the frontend dev server runs on `http://localhost:5173`, and nginx
+serves the browser-facing local UI at `http://localhost:3000`. Keep the host backend and
+frontend processes running while using the nginx URL.
 
 ## Environment variables
 
@@ -165,9 +170,6 @@ All settings follow ASP.NET Core's double-underscore (`__`) convention for neste
 |----------|-------------|
 | `PUBLIC_API_URL` | Base URL of the Konfigo backend |
 | `PUBLIC_SIGNALR_URL` | Base URL of the SignalR config hub |
-| `VITE_API_PROXY_TARGET` | Backend target used by the Vite dev proxy |
-| `VITE_API_PROXY_PREFIX` | Request prefix handled by the Vite dev proxy |
-| `VITE_API_PROXY_REWRITE_TO` | Backend path prefix used when proxying API requests |
 
 ## Authentication setup
 
