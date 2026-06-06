@@ -20,7 +20,9 @@ message GetConfigRequest {
 }
 
 message GetConfigResponse {
-  repeated ConfigEntry entries = 1;
+  string service_id = 1;
+  string version_id = 2;
+  repeated ConfigEntry entries = 3;
 
   message ConfigEntry {
     string key = 1;

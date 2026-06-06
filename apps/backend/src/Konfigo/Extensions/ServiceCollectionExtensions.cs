@@ -2,6 +2,7 @@ using System;
 using Konfigo.Application.Services.Notifications;
 using Konfigo.Authorization;
 using Konfigo.Notifications;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -29,6 +30,8 @@ public static class ServiceCollectionExtensions
 
         services
             .AddScoped<IAuthorizationHandler, ConfiguredRolesAuthorizationHandler>();
+        services
+            .AddScoped<IClaimsTransformation, CanAllServiceClaimsTransformation>();
 
         services.AddConfiguredAuthentication(configuration);
         services.AddConfiguredAuthorization();

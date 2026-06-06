@@ -11,6 +11,7 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import { showToast } from '$lib/stores/toast';
 
 	type ServiceItem = ApplicationServiceContract & {
 		versionCount?: number;
@@ -124,6 +125,18 @@
 		}
 	}
 
+	async function copyServiceId(event: MouseEvent, serviceId: string) {
+		event.preventDefault();
+		event.stopPropagation();
+
+		try {
+			await navigator.clipboard.writeText(serviceId);
+			showToast('Service ID copied', 'success');
+		} catch {
+			showToast('Failed to copy service ID', 'error');
+		}
+	}
+
 	const userCanAll = $derived(canAll($user));
 </script>
 
@@ -204,6 +217,21 @@
 							<div class="flex items-start justify-between gap-3">
 								<div>
 									<h2 class="font-mono text-[16px] font-semibold">{service.name}</h2>
+									<div class="service-id-pill mt-2">
+										<span class="truncate font-mono" title={service.id}>{service.id}</span>
+										<button
+											class="copy-id-button"
+											type="button"
+											aria-label="Copy service ID"
+											title="Copy service ID"
+											onclick={(event) => copyServiceId(event, service.id)}
+										>
+											<svg viewBox="0 0 16 16" class="h-3.5 w-3.5" fill="none" aria-hidden="true">
+												<rect x="6" y="5" width="7" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4" />
+												<path d="M4 10.5H3.5A1.5 1.5 0 0 1 2 9V3.5A1.5 1.5 0 0 1 3.5 2H9a1.5 1.5 0 0 1 1.5 1.5V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+											</svg>
+										</button>
+									</div>
 									<p class="mt-2 line-clamp-2 text-[14px] text-[var(--text-secondary)]">{service.description ?? 'No description provided.'}</p>
 								</div>
 								<Badge variant="success">Active</Badge>
@@ -251,5 +279,37 @@
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
+	}
+
+	.service-id-pill {
+		display: inline-flex;
+		max-width: 100%;
+		align-items: center;
+		gap: 6px;
+		border: 1px solid var(--border);
+		border-radius: 7px;
+		background: var(--bg-subtle);
+		padding: 3px 4px 3px 8px;
+		color: var(--text-secondary);
+		font-size: 11px;
+	}
+
+	.copy-id-button {
+		display: inline-flex;
+		height: 22px;
+		width: 22px;
+		flex: 0 0 auto;
+		align-items: center;
+		justify-content: center;
+		border-radius: 5px;
+		color: var(--text-tertiary);
+		transition:
+			background-color 150ms ease,
+			color 150ms ease;
+	}
+
+	.copy-id-button:hover {
+		background: var(--bg-elevated);
+		color: var(--text-primary);
 	}
 </style>

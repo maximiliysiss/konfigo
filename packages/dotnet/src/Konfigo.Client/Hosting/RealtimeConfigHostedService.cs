@@ -79,10 +79,6 @@ internal sealed class RealtimeConfigHostedService : RestartableService
             return;
         }
 
-        var versionService = scope.ServiceProvider.GetRequiredService<IVersionService>();
-
-        var versionId = await versionService.CreateAsync(cancellationToken);
-
         var timestamp = options.Value.Timestamp;
 
         while (!cancellationToken.IsCancellationRequested)
@@ -97,7 +93,7 @@ internal sealed class RealtimeConfigHostedService : RestartableService
                 {
                     ServiceId = options.Value.ServiceId,
                     Timestamp = timestamp.ToTimestamp(),
-                    VersionId = versionId.Value,
+                    VersionId = options.Value.VersionId,
                 };
 
                 var eventsStream = service.StartSubscribeAsync(

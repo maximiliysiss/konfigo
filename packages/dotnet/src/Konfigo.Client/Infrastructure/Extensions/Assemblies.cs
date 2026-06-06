@@ -71,7 +71,11 @@ internal static class Assemblies
             return valueType switch
             {
                 ValueType.Array => "[]",
-                ValueType.String => string.Empty,
+                ValueType.String => type switch
+                {
+                    _ when type == typeof(Guid) => "00000000-0000-0000-0000-000000000000",
+                    _ => string.Empty,
+                },
                 ValueType.DateTime => type switch
                 {
                     _ when type == typeof(DateTimeOffset) => DateTimeOffset.MinValue.ToString(CultureInfo.InvariantCulture),
@@ -97,6 +101,8 @@ internal static class Assemblies
                 _ when type.IsEnum => ValueType.Enum,
                 _ when type.IsNumber() => ValueType.Number,
                 _ when type.IsArray => ValueType.Array,
+                _ when type == typeof(Guid) => ValueType.String,
+                _ when type.IsPrimitive => ValueType.String,
                 _ => ValueType.Json,
             };
         }

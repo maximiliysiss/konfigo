@@ -89,6 +89,51 @@ public sealed class SetConfigEntriesTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Set_ShouldUpdateRawValue_WhenAdminHasNoServiceClaims()
+    {
+        // Arrange
+        using var admin = _fixture.CreateAdminClient();
+
+        var service = await admin.CreateServiceAsync(new CreateOrUpdateServiceRequest { Name = $"svc-{Guid.NewGuid():N}" });
+        _serviceDbHelper.Track(service.Id);
+
+        var version = await admin.CreateConfigVersionAsync(
+            service.Id,
+            new CreateConfigVersionRequest { VersionLabel = $"v-{Guid.NewGuid():N}" });
+        _versionDbHelper.Track(version.Id);
+
+        var entry = await admin.CreateConfigEntryAsync(
+            service.Id,
+            version.Id,
+            new CreateConfigEntryRequest
+            {
+                Key = $"key-{Guid.NewGuid():N}",
+                Name = "name",
+                RawValue = "init",
+                ValueType = ConfigValueType.String,
+            });
+        _entryDbHelper.Track(entry.Id);
+
+        using var client = _fixture.CreateAuthenticatedClient(roles: "admin", services: string.Empty);
+        var setRequest = new[]
+        {
+            new SetConfigEntryRequest { Id = entry.Id, RawValue = "changed", Generation = entry.Generation },
+        };
+
+        // Act
+        var response = await client.SendSetConfigEntriesAsync(service.Id, version.Id, setRequest);
+
+        // Assert
+        var content = await response.Content.ReadAsStringAsync();
+        response.IsSuccessStatusCode.Should().BeTrue(content);
+
+        var row = await _entryDbHelper.GetAsync(entry.Id);
+        row.Should().NotBeNull();
+        row!.RawValue.Should().Be("changed");
+        row.Generation.Should().Be(entry.Generation + 1);
+    }
+
+    [Fact]
     public async Task Set_ShouldReturnForbidden_WhenCanChangeHasNoServiceClaims()
     {
         // Arrange

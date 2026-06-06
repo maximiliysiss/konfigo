@@ -3,6 +3,7 @@ using System.Globalization;
 using AutoBogus;
 using FluentAssertions;
 using Konfigo.Client.Configuration;
+using Konfigo.Client.Entities;
 using Konfigo.Client.Models;
 using Konfigo.Client.Options;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -170,7 +171,7 @@ public class RealtimeConfigProviderTests
     }
 
     private static RealtimeConfigProvider Create(ConfigEntry[]? entries = null)
-        => new(entries ?? [], NullLogger<RealtimeConfigProvider>.Instance);
+        => new(VersionId.Empty, entries ?? [], NullLogger<RealtimeConfigProvider>.Instance);
 
     private static ConfigEntry GenerateConfigEntry()
         => AutoFaker.Generate<ConfigEntry>() with { Generation = 2 };

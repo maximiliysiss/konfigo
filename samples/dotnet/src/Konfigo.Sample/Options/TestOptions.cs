@@ -3,7 +3,7 @@ using Konfigo.Abstraction.Attributes;
 namespace Konfigo.Sample.Options;
 
 [ConfigGroup]
-public sealed class RealtimeConfigOptions
+public sealed class TestOptions
 {
     [ConfigKey(DefaultValue = "false")]
     public bool IsEnabled { get; set; }
@@ -19,6 +19,9 @@ public sealed class RealtimeConfigOptions
 
     [ConfigKey(DefaultValue = "Web")]
     public ServiceType Type { get; set; } = ServiceType.Web;
+
+    [ConfigKey(DefaultValue = "[1,2,3]")]
+    public int[] Numbers { get; set; } = [1, 2, 3];
 
     public enum ServiceType
     {

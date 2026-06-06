@@ -20,6 +20,11 @@ internal sealed class RealtimeConfigOptions
     public string ServiceId { get; set; } = string.Empty;
 
     /// <summary>
+    /// The version id. Created when the service is created.
+    /// </summary>
+    public string VersionId { get; set; } = string.Empty;
+
+    /// <summary>
     /// The url of the realtime config service
     /// </summary>
     public string Url { get; set; } = string.Empty;

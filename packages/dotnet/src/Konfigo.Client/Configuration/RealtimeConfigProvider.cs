@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using Konfigo.Client.Entities;
 using Konfigo.Client.Extensions;
 using Konfigo.Client.Infrastructure.Extensions;
 using Konfigo.Client.Models;
@@ -10,20 +11,36 @@ using Microsoft.Extensions.Logging;
 
 namespace Konfigo.Client.Configuration;
 
-internal sealed class RealtimeConfigProvider(ConfigEntry[] entries, ILogger<RealtimeConfigProvider> logger) : ConfigurationProvider
+internal sealed class RealtimeConfigProvider : ConfigurationProvider
 {
     private readonly Dictionary<string, int> _generations = [];
 
     private const string TimestampKey = $"{nameof(RealtimeConfigOptions)}:{nameof(RealtimeConfigOptions.Timestamp)}";
     private DateTimeOffset _timestamp = DateTimeOffset.MinValue;
 
+    private const string VersionIdKey = $"{nameof(RealtimeConfigOptions)}:{nameof(RealtimeConfigOptions.VersionId)}";
+    private readonly VersionId _versionId;
+
+    private readonly ConfigEntry[] _entries;
+
+    private readonly ILogger<RealtimeConfigProvider> _logger;
+
+    public RealtimeConfigProvider(VersionId versionId, ConfigEntry[] entries, ILogger<RealtimeConfigProvider> logger)
+    {
+        _versionId = versionId;
+        _entries = entries;
+        _logger = logger;
+    }
+
     public override void Load()
     {
-        logger.LoadingRealtimeConfig();
+        _logger.LoadingRealtimeConfig();
 
-        Update(entries);
+        Update(_entries);
 
-        logger.RealtimeConfigLoaded();
+        Data[VersionIdKey] = _versionId.Value;
+
+        _logger.RealtimeConfigLoaded();
     }
 
     private bool Update(IEnumerable<ConfigEntry> values)
@@ -52,7 +69,7 @@ internal sealed class RealtimeConfigProvider(ConfigEntry[] entries, ILogger<Real
 
     public void Set(IEnumerable<ConfigEntry> values)
     {
-        logger.SettingRealtimeConfig();
+        _logger.SettingRealtimeConfig();
 
         var isUpdate = Update(values);
 
@@ -61,6 +78,6 @@ internal sealed class RealtimeConfigProvider(ConfigEntry[] entries, ILogger<Real
             OnReload();
         }
 
-        logger.RealtimeConfigSet();
+        _logger.RealtimeConfigSet();
     }
 }

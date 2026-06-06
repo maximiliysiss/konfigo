@@ -68,7 +68,12 @@ public class RealtimeConfigGrpcService : Client.Grpc.RealtimeConfigGrpcService.R
         {
             _logger.LogGrpcGetConfigMissingVersion(serviceId, request.Version);
 
-            return new GetConfigResponse();
+            return new GetConfigResponse
+            {
+                ServiceId = request.ServiceId,
+                VersionId = string.Empty,
+                Entries = { },
+            };
         }
 
         var searchEntryRequest = SearchEntryRequest.Create(
@@ -82,7 +87,12 @@ public class RealtimeConfigGrpcService : Client.Grpc.RealtimeConfigGrpcService.R
 
         _logger.LogGrpcGetConfigCompleted(serviceId, version.Id, configEntries.Length);
 
-        return new GetConfigResponse { Entries = { configEntries } };
+        return new GetConfigResponse
+        {
+            Entries = { configEntries },
+            ServiceId = request.ServiceId,
+            VersionId = version.Id.ToString(),
+        };
 
         static GetConfigResponse.Types.ConfigEntry Map(ConfigEntry entry)
         {
