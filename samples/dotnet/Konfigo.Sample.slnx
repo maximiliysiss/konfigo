@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/common/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Packages.props" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Konfigo.Sample/Konfigo.Sample.csproj" />
+  </Folder>
+</Solution>

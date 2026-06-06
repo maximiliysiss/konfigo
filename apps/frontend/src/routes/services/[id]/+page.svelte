@@ -24,6 +24,15 @@
 	type ServiceDetail = ApplicationServiceContract;
 	type VersionWithStats = ConfigVersionContract & { entryCount: number };
 	type AuditEntry = AuditLogContract;
+	type AuditDetail = { label: string; value: string };
+	type AuditSummary = {
+		type: string;
+		title: string;
+		subtitle: string;
+		badge: 'default' | 'success' | 'warning' | 'danger' | 'accent';
+		details: AuditDetail[];
+		unknown: boolean;
+	};
 
 	let tab = $state<TabKey>('info');
 	let service = $state<ServiceDetail | null>(null);
@@ -206,6 +215,104 @@
 			return String(value);
 		}
 	}
+
+	function auditType(entry: AuditEntry['entry']): string {
+		const rawType = entry?.$type ?? entry?.type;
+		if (typeof rawType === 'string') return rawType;
+		if (typeof rawType !== 'number') return 'Unknown';
+
+		const types: Record<number, string> = {
+			0: 'ServiceCreated',
+			1: 'ServiceUpdated',
+			2: 'ServiceMemberAdded',
+			3: 'ServiceMemberRemoved',
+			4: 'ServiceDeleted',
+			5: 'VersionCreated',
+			6: 'VersionUpdated',
+			7: 'EntryCreated',
+			8: 'EntryUpdated',
+			9: 'EntryDeleted',
+			10: 'EntrySet'
+		};
+		return types[rawType] ?? 'Unknown';
+	}
+
+	function auditActionLabel(type: string): string {
+		const labels: Record<string, string> = {
+			ServiceCreated: 'Service created',
+			ServiceUpdated: 'Service updated',
+			ServiceMemberAdded: 'Member added',
+			ServiceMemberRemoved: 'Member removed',
+			ServiceDeleted: 'Service deleted',
+			VersionCreated: 'Version created',
+			VersionUpdated: 'Version updated',
+			EntryCreated: 'Config entry created',
+			EntryUpdated: 'Config entry updated',
+			EntryDeleted: 'Config entry deleted',
+			EntrySet: 'Config value changed'
+		};
+		return labels[type] ?? type.replace(/([a-z])([A-Z])/g, '$1 $2');
+	}
+
+	function auditBadge(type: string): AuditSummary['badge'] {
+		if (type.endsWith('Created') || type === 'ServiceMemberAdded') return 'success';
+		if (type.endsWith('Updated') || type === 'EntrySet') return 'warning';
+		if (type.endsWith('Deleted') || type === 'ServiceMemberRemoved') return 'danger';
+		return 'accent';
+	}
+
+	function humanLabel(key: string): string {
+		const labels: Record<string, string> = {
+			id: 'ID',
+			name: 'Name',
+			description: 'Description',
+			repositoryUrl: 'Repository URL',
+			gitLabProjectId: 'GitLab Project ID',
+			contactEmail: 'Contact email',
+			userId: 'User ID',
+			versionLabel: 'Version',
+			rawValue: 'Value',
+			enumDefinition: 'Enum values',
+			groupName: 'Group',
+			groupDescription: 'Group description',
+			value: 'Value'
+		};
+		return labels[key] ?? key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (value) => value.toUpperCase());
+	}
+
+	function formatAuditValue(value: unknown): string {
+		if (value === null || value === undefined || value === '') return 'Not set';
+		if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return String(value);
+		return stringifyJson(value);
+	}
+
+	function auditDetails(entry: AuditEntry['entry']): AuditDetail[] {
+		const hidden = new Set(['$type', 'type']);
+		return Object.entries(entry ?? {})
+			.filter(([key]) => !hidden.has(key))
+			.map(([key, value]) => ({ label: humanLabel(key), value: formatAuditValue(value) }));
+	}
+
+	function auditSubject(type: string, entry: AuditEntry['entry']): string {
+		if (type.startsWith('Service')) return formatAuditValue(entry?.name);
+		if (type.startsWith('Version')) return formatAuditValue(entry?.versionLabel ?? entry?.id);
+		if (type.startsWith('Entry')) return `Entry ${formatAuditValue(entry?.id)}`;
+		return 'Audit event';
+	}
+
+	function auditSummary(row: AuditEntry): AuditSummary {
+		const type = auditType(row.entry);
+		const subject = auditSubject(type, row.entry);
+		const details = auditDetails(row.entry);
+		return {
+			type,
+			title: auditActionLabel(type),
+			subtitle: subject === 'Not set' ? 'No target details' : subject,
+			badge: auditBadge(type),
+			details,
+			unknown: type === 'Unknown'
+		};
+	}
 </script>
 
 {#if loading}
@@ -342,26 +449,55 @@
 						<div class="timeline">
 							{#each audit as row, i}
 								{@const rowKey = `${auditPage}-${i}`}
+								{@const summary = auditSummary(row)}
 								<div class="timeline-item">
 									<button class="w-full rounded-[12px] border border-[var(--border)] bg-[var(--bg-elevated)] p-4 text-left" type="button" onclick={() => toggleRow(i)}>
 										<div class="flex flex-wrap items-start justify-between gap-3">
-											<div class="space-y-2">
-												<Badge variant="accent">{row.entry?.type ?? '-'}</Badge>
-												<p class="text-[14px] text-[var(--text-primary)]">{row.entry?.type ?? '-'} · {row.userId ?? '-'}</p>
+											<div class="min-w-0 space-y-2">
+												<Badge variant={summary.badge}>{summary.type}</Badge>
+												<div>
+													<p class="text-[15px] font-semibold text-[var(--text-primary)]">{summary.title}</p>
+													<p class="mt-1 break-words text-[13px] text-[var(--text-secondary)]">{summary.subtitle}</p>
+												</div>
 											</div>
-											<p class="text-[12px] text-[var(--text-tertiary)]">{prettyDate(row.createdAt)}</p>
+											<div class="text-right">
+												<p class="text-[12px] text-[var(--text-tertiary)]">{prettyDate(row.createdAt)}</p>
+												<p class="mt-1 text-[12px] text-[var(--text-secondary)]">{row.userId ? `User ${row.userId}` : 'System action'}</p>
+											</div>
 										</div>
 									</button>
 									{#if expandedRows[rowKey]}
-										<div class="mt-3 grid gap-3 md:grid-cols-2">
-											<div>
-												<p class="mb-2 text-[12px] text-[var(--text-secondary)]">Entry</p>
-												<pre class="code-block">{stringifyJson(row.entry)}</pre>
+										<div class="mt-3 rounded-[12px] border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
+											<div class="grid gap-3 md:grid-cols-2">
+												<div>
+													<p class="text-[12px] text-[var(--text-secondary)]">Changed by</p>
+													<p class="mt-1 break-words text-[13px] text-[var(--text-primary)]">{row.userId ?? 'System'}</p>
+												</div>
+												<div>
+													<p class="text-[12px] text-[var(--text-secondary)]">Created</p>
+													<p class="mt-1 text-[13px] text-[var(--text-primary)]">{prettyDate(row.createdAt)}</p>
+												</div>
 											</div>
-											<div>
-												<p class="mb-2 text-[12px] text-[var(--text-secondary)]">User</p>
-												<pre class="code-block">{stringifyJson(row.userId)}</pre>
-											</div>
+
+											{#if summary.details.length > 0}
+												<div class="mt-4 grid gap-3 md:grid-cols-2">
+													{#each summary.details as detail}
+														<div class="rounded-[8px] border border-[var(--border)] bg-[var(--bg-subtle)] p-3">
+															<p class="text-[12px] text-[var(--text-secondary)]">{detail.label}</p>
+															<p class="mt-1 whitespace-pre-wrap break-words font-mono text-[12px] text-[var(--text-primary)]">{detail.value}</p>
+														</div>
+													{/each}
+												</div>
+											{:else}
+												<p class="mt-4 text-[13px] text-[var(--text-secondary)]">No additional details.</p>
+											{/if}
+
+											{#if summary.unknown}
+												<div class="mt-4">
+													<p class="mb-2 text-[12px] text-[var(--text-secondary)]">Raw payload</p>
+													<pre class="code-block">{stringifyJson(row.entry)}</pre>
+												</div>
+											{/if}
 										</div>
 									{/if}
 								</div>
