@@ -2,7 +2,7 @@
 	let { className = '', children, header } = $props<{ className?: string; children?: import('svelte').Snippet; header?: import('svelte').Snippet }>();
 </script>
 
-<section class={`overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--bg-surface)] shadow-[var(--shadow-sm)] ${className}`}>
+<section class={`overflow-hidden rounded-[8px] border border-[var(--border)] bg-[var(--bg-surface)] shadow-[var(--shadow-sm)] ${className}`}>
 	{#if header}
 		<header class="border-b border-[var(--border)] px-5 py-4">
 			{@render header()}

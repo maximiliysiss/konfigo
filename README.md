@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="apps/frontend/static/app-icon.png" alt="Konfigo icon" width="128" height="128">
+</p>
+
 # Konfigo
 
 [![CI/CD](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml/badge.svg)](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml)

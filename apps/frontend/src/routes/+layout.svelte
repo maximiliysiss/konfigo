@@ -2,7 +2,6 @@
 	import { fade } from 'svelte/transition';
 	import { page } from '$app/stores';
 	import '../app.css';
-	import favicon from '$lib/assets/favicon.svg';
 	import { buildBackendUrl } from '$lib/api';
 	import { canAll, user, type AuthUser } from '$lib/stores/auth';
 	import { consumeQueuedToast, toasts } from '$lib/stores/toast';
@@ -61,8 +60,9 @@
 </script>
 
 <svelte:head>
-	<link rel="icon" href={favicon} />
-	<title>Realtime Config Manager</title>
+	<link rel="icon" type="image/png" href="/app-icon.png" />
+	<link rel="apple-touch-icon" href="/app-icon.png" />
+	<title>Konfigo</title>
 </svelte:head>
 
 {#if data.connectionError}
@@ -90,7 +90,10 @@
 	<div class="app-shell">
 		<header class="app-topbar">
 			<div class="topbar-left">
-				<a class="logo-mark" href="/services">Realtime Config</a>
+				<a class="logo-mark" href="/services">
+					<img src="/app-icon.png" alt="" class="logo-mark-image" />
+					<span>Konfigo</span>
+				</a>
 
 				<nav class="topbar-nav">
 					{#each navItems as item}

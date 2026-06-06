@@ -35,8 +35,8 @@
 		<span class="block text-[13px] text-[var(--text-secondary)]">{label}</span>
 	{/if}
 	<span
-		class={`flex h-9 items-center gap-2 rounded-[8px] border bg-[var(--bg-surface)] px-3 transition-all duration-150 ${
-			error ? 'border-[var(--danger)]' : 'border-[var(--border)] focus-within:border-[var(--accent)]'
+		class={`flex h-9 items-center gap-2 rounded-[7px] border bg-[var(--bg-elevated)] px-3 transition-all duration-150 ${
+			error ? 'border-[var(--danger)]' : 'border-[var(--border)] focus-within:border-[var(--ink)]'
 		}`}
 	>
 		{#if prefix}

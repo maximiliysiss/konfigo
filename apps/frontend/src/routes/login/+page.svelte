@@ -13,15 +13,20 @@
 </script>
 
 <svelte:head>
-	<title>Sign in — Realtime Config</title>
+	<title>Sign in - Konfigo</title>
 </svelte:head>
 
-<main class="flex min-h-screen items-center justify-center bg-[var(--bg-app)] px-6">
-	<div class="w-full max-w-[400px] rounded-[12px] border border-[var(--border)] bg-[var(--bg-surface)] p-8 shadow-sm">
-		<p class="section-label">Realtime Config</p>
-		<h1 class="mt-3 text-[20px] font-semibold text-[var(--text-primary)]">Sign in to continue</h1>
-		<p class="mt-2 text-[14px] text-[var(--text-secondary)]">
-			Use your JumpCloud account to sign in via SSO.
+<main class="login-background">
+	<div class="w-full max-w-[420px] rounded-[8px] border border-[var(--border)] bg-[var(--bg-surface)] p-7 shadow-[var(--shadow-md)]">
+		<div class="mb-7 flex items-center gap-3">
+			<img src="/app-icon.png" alt="" class="h-12 w-12 rounded-[10px] border border-[var(--border)] bg-[var(--bg-elevated)] object-cover" />
+			<div>
+				<p class="section-label">Konfigo</p>
+				<h1 class="mt-1 text-[22px] font-semibold text-[var(--text-primary)]">Sign in</h1>
+			</div>
+		</div>
+		<p class="text-[14px] text-[var(--text-secondary)]">
+			Use your JumpCloud account to enter the configuration control plane.
 		</p>
 
 		<a class="login-sso-button mt-6" href={loginHref}>

@@ -11,6 +11,6 @@
 	};
 </script>
 
-<span class={`inline-flex items-center rounded-[20px] px-2 py-1 text-[11px] uppercase tracking-[0.12em] ${variants[variant as Variant]} ${className}`}>
+<span class={`inline-flex items-center rounded-[6px] border border-[var(--border)] px-2 py-1 text-[11px] uppercase tracking-[0.14em] ${variants[variant as Variant]} ${className}`}>
 	{@render children?.()}
 </span>

@@ -70,9 +70,10 @@
 </script>
 
 <section class="space-y-6">
-	<div class="page-header">
+	<div class="page-header border-l-2 border-[var(--ink)] pl-5">
 		<div>
-			<h1 class="page-title">Create service</h1>
+			<p class="section-label">Provision</p>
+			<h1 class="page-title mt-2">Create service</h1>
 			<p class="page-subtitle">Define the service identity, repository details, and team contact information.</p>
 		</div>
 	</div>

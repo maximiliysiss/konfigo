@@ -128,9 +128,10 @@
 </script>
 
 <section class="space-y-6">
-	<div class="page-header">
-		<div>
-			<h1 class="page-title">Services</h1>
+	<div class="page-header border-l-2 border-[var(--ink)] pl-5">
+		<div class="max-w-[620px]">
+			<p class="section-label">Inventory</p>
+			<h1 class="page-title mt-2">Services</h1>
 			<p class="page-subtitle">Browse every service, inspect ownership, and jump into versioned configuration.</p>
 		</div>
 		{#if userCanAll}
@@ -140,8 +141,8 @@
 		{/if}
 	</div>
 
-	<Card>
-		<Input id="service-search" label="Search services" placeholder="Search by service name" bind:value={search}>
+	<Card className="border-[var(--border-strong)]">
+		<Input id="service-search" label="Search services" placeholder="Filter by service name" bind:value={search}>
 			{#snippet prefix()}
 				<svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" aria-hidden="true">
 					<circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5" />
@@ -198,11 +199,11 @@
 		<div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
 			{#each services as service}
 				<a href={`/services/${service.id}`} class="group block">
-					<Card className="h-full transition-all duration-150 group-hover:-translate-y-[1px] group-hover:border-[var(--border-strong)]">
+					<Card className="h-full transition-all duration-150 group-hover:-translate-y-[1px] group-hover:border-[var(--ink)]">
 						<div class="flex h-full flex-col gap-4">
 							<div class="flex items-start justify-between gap-3">
 								<div>
-									<h2 class="text-[16px] font-semibold">{service.name}</h2>
+									<h2 class="font-mono text-[16px] font-semibold">{service.name}</h2>
 									<p class="mt-2 line-clamp-2 text-[14px] text-[var(--text-secondary)]">{service.description ?? 'No description provided.'}</p>
 								</div>
 								<Badge variant="success">Active</Badge>
@@ -225,7 +226,7 @@
 								<div class="flex flex-wrap gap-2">
 									<span class="metric-pill">{service.versionCount ?? 0} versions</span>
 								</div>
-								<Button variant="ghost" size="sm">View</Button>
+								<Button variant="ghost" size="sm">Open</Button>
 							</div>
 						</div>
 					</Card>

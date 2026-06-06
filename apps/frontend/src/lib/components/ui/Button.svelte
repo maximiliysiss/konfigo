@@ -25,7 +25,7 @@
 	}>();
 
 	const base =
-		'inline-flex items-center justify-center gap-2 rounded-[8px] border text-[13px] font-medium transition-all duration-150 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40';
+		'inline-flex items-center justify-center gap-2 rounded-[7px] border text-[13px] font-semibold transition-all duration-150 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40';
 
 	const sizes: Record<Size, string> = {
 		sm: 'h-7 px-3',
@@ -34,8 +34,8 @@
 	};
 
 	const variants: Record<Variant, string> = {
-		primary: 'border-transparent bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)]',
-		secondary: 'border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-subtle)]',
+		primary: 'border-[var(--ink)] bg-[var(--ink)] text-[var(--bg-surface)] hover:border-[var(--accent)] hover:bg-[var(--accent)] hover:text-[#001f19]',
+		secondary: 'border-[var(--border-strong)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--ink)]',
 		ghost: 'border-transparent bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]',
 		danger: 'border-transparent bg-[var(--danger)] text-white hover:bg-[color:color-mix(in_srgb,var(--danger)_88%,black)]'
 	};
