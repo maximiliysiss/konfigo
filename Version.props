@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <KonfigoVersion>0.0.1</KonfigoVersion>
+    <Version>$(KonfigoVersion)</Version>
+    <PackageVersion>$(KonfigoVersion)</PackageVersion>
+    <AssemblyVersion>$(KonfigoVersion)</AssemblyVersion>
+    <FileVersion>$(KonfigoVersion)</FileVersion>
+    <InformationalVersion>$(KonfigoVersion)</InformationalVersion>
+  </PropertyGroup>
+</Project>

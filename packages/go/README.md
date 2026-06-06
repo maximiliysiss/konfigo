@@ -8,6 +8,13 @@ Go client SDK for Konfigo Realtime Config. It mirrors the .NET SDK concepts:
 - stale and equal-generation updates are ignored;
 - subscription events with generation `1` are treated as initial state and do not overwrite the already loaded snapshot.
 
+## Package metadata
+
+Module path: `github.com/maximiliysiss/konfigo/packages/go`
+
+Go package versions are published through git tags. Use the repository release version from
+`../../VERSION` for module tags, for example `v0.0.1`.
+
 ## Declaring Options
 
 Go does not have attributes, so a config group is marked with an embedded `konfigo.Group` field. Exported fields with a `konfigo` tag become config keys.

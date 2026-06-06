@@ -5,7 +5,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Description>A C# library for Realtime configuration</Description>
+    <PackageId>Konfigo.Client</PackageId>
+    <Title>Konfigo .NET Client SDK</Title>
+    <Description>.NET client SDK for Konfigo Realtime Config with IConfiguration, IOptions, gRPC transport, and live updates.</Description>
+    <Summary>Realtime configuration client SDK for .NET applications.</Summary>
+    <PackageTags>konfigo;configuration;realtime-config;grpc;options;aspnetcore;sdk</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

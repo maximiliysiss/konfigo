@@ -5,7 +5,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Description>A C# library for Realtime configuration abstraction</Description>
+    <PackageId>Konfigo.Abstraction</PackageId>
+    <Title>Konfigo .NET Abstractions</Title>
+    <Description>Attribute abstractions for declaring Konfigo Realtime Config groups and keys without depending on the runtime client SDK.</Description>
+    <Summary>Configuration schema attributes for Konfigo .NET integrations.</Summary>
+    <PackageTags>konfigo;configuration;realtime-config;attributes;abstractions;sdk</PackageTags>
   </PropertyGroup>
 
 </Project>

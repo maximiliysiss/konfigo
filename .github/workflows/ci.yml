@@ -15,6 +15,48 @@ env:
   DOTNET_NOLOGO: true
 
 jobs:
+  validate-version:
+    name: Validate · Package version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate package versions
+        id: version
+        shell: bash
+        run: |
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          PYTHON_VERSION="$(python -c "import pathlib,tomllib; print(tomllib.loads(pathlib.Path('packages/python/pyproject.toml').read_text())['project']['version'])")"
+          FRONTEND_VERSION="$(python -c "import json,pathlib; print(json.loads(pathlib.Path('apps/frontend/package.json').read_text())['version'])")"
+          FRONTEND_LOCK_VERSION="$(python -c "import json,pathlib; print(json.loads(pathlib.Path('apps/frontend/package-lock.json').read_text())['version'])")"
+
+          if [ "$VERSION" != "$PYTHON_VERSION" ]; then
+            echo "packages/python/pyproject.toml version '${PYTHON_VERSION}' must match VERSION '${VERSION}'." >&2
+            exit 1
+          fi
+
+          if [ "$VERSION" != "$FRONTEND_VERSION" ]; then
+            echo "apps/frontend/package.json version '${FRONTEND_VERSION}' must match VERSION '${VERSION}'." >&2
+            exit 1
+          fi
+
+          if [ "$VERSION" != "$FRONTEND_LOCK_VERSION" ]; then
+            echo "apps/frontend/package-lock.json version '${FRONTEND_LOCK_VERSION}' must match VERSION '${VERSION}'." >&2
+            exit 1
+          fi
+
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${GITHUB_REF_NAME#v}"
+
+            if [ "$VERSION" != "$TAG" ]; then
+              echo "Release tag '${GITHUB_REF_NAME}' must match VERSION '${VERSION}' or 'v${VERSION}'." >&2
+              exit 1
+            fi
+          fi
+
+          echo "value=${VERSION}" >> "$GITHUB_OUTPUT"
+
   # ── Package tests ──────────────────────────────────────────────────────────
 
   test-go:
@@ -108,7 +150,7 @@ jobs:
   publish-go:
     name: Publish · Go package
     if: github.event_name == 'release'
-    needs: [test-go, test-python, test-dotnet-package, test-backend]
+    needs: [validate-version, test-go, test-python, test-dotnet-package, test-backend]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -124,7 +166,7 @@ jobs:
   publish-python:
     name: Publish · Python package
     if: github.event_name == 'release'
-    needs: [test-go, test-python, test-dotnet-package, test-backend]
+    needs: [validate-version, test-go, test-python, test-dotnet-package, test-backend]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -145,7 +187,7 @@ jobs:
   publish-dotnet-package:
     name: Publish · .NET package
     if: github.event_name == 'release'
-    needs: [test-go, test-python, test-dotnet-package, test-backend]
+    needs: [validate-version, test-go, test-python, test-dotnet-package, test-backend]
     runs-on: ubuntu-latest
     env:
       NuGetDirectory: ${{ github.workspace }}/nuget
@@ -169,7 +211,7 @@ jobs:
   docker-backend:
     name: Docker · Backend
     if: github.event_name == 'release'
-    needs: [test-go, test-python, test-dotnet-package, test-backend]
+    needs: [validate-version, test-go, test-python, test-dotnet-package, test-backend]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -201,15 +243,19 @@ jobs:
         with:
           context: apps/backend
           push: true
+          build-args: |
+            KONFIGO_VERSION=${{ needs.validate-version.outputs.version }}
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+            org.opencontainers.image.version=${{ needs.validate-version.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   docker-frontend:
     name: Docker · Frontend
     if: github.event_name == 'release'
-    needs: [test-go, test-python, test-dotnet-package, test-backend]
+    needs: [validate-version, test-go, test-python, test-dotnet-package, test-backend]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -241,7 +287,11 @@ jobs:
         with:
           context: apps/frontend
           push: true
+          build-args: |
+            KONFIGO_VERSION=${{ needs.validate-version.outputs.version }}
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+            org.opencontainers.image.version=${{ needs.validate-version.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

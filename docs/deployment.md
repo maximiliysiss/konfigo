@@ -62,6 +62,10 @@ The dev server starts on `http://localhost:5173`.
 
 ## Docker (production)
 
+The repository release version is stored in `VERSION`. Docker builds accept it through
+`KONFIGO_VERSION` and write it to the `org.opencontainers.image.version` label and the
+`KONFIGO_VERSION` environment variable inside the image.
+
 ### Backend
 
 ```dockerfile
@@ -82,24 +86,24 @@ Build and run:
 
 ```bash
 cd apps/backend
-docker build -t konfigo-backend .
+docker build --build-arg KONFIGO_VERSION=0.0.1 -t konfigo-backend:0.0.1 .
 docker run -p 8080:8080 \
   -e ConnectionStrings__Postgres="Host=db;..." \
   -e ConnectionStrings__Redis="redis:6379" \
   -e Authentication__Provider="Jwt" \
   -e Authentication__Jwt__Authority="https://your-idp" \
   -e Authentication__Jwt__Audience="konfigo" \
-  konfigo-backend
+  konfigo-backend:0.0.1
 ```
 
 ### Frontend
 
 ```bash
 cd apps/frontend
-docker build -t konfigo-frontend .
+docker build --build-arg KONFIGO_VERSION=0.0.1 -t konfigo-frontend:0.0.1 .
 docker run -p 3000:3000 \
   -e PUBLIC_API_URL="https://your-backend" \
-  konfigo-frontend
+  konfigo-frontend:0.0.1
 ```
 
 ## Environment variables

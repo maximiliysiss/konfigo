@@ -33,6 +33,16 @@ konfigo/
 | Auth | SAML 2.0 / OpenID Connect / JWT (configurable) |
 | CI/CD | GitHub Actions → DockerHub / GHCR / NuGet / PyPI |
 
+## Versioning
+
+The current cross-project release version is stored in [`VERSION`](VERSION) and is `0.0.1`.
+The same version is used for the backend application, .NET SDK packages, Python SDK package,
+frontend package metadata, and Docker image labels. Release tags must match this value as
+`0.0.1` or `v0.0.1`.
+
+Go SDK versions are resolved by the Go module ecosystem from git tags. Use the same release
+number for Go module tags when publishing the SDK.
+
 ## Quick start
 
 ### Run with Docker Compose
@@ -59,9 +69,13 @@ Pre-built images are published to DockerHub and GHCR on every GitHub release:
 
 ```
 <DOCKERHUB_USERNAME>/konfigo-backend:latest
+<DOCKERHUB_USERNAME>/konfigo-backend:0.0.1
 <DOCKERHUB_USERNAME>/konfigo-frontend:latest
+<DOCKERHUB_USERNAME>/konfigo-frontend:0.0.1
 ghcr.io/<OWNER>/konfigo-backend:latest
+ghcr.io/<OWNER>/konfigo-backend:0.0.1
 ghcr.io/<OWNER>/konfigo-frontend:latest
+ghcr.io/<OWNER>/konfigo-frontend:0.0.1
 ```
 
 ## SDK quick start

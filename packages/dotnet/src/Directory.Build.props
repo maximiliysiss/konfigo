@@ -1,5 +1,13 @@
 <Project>
+  <Import Project="../../../Version.props" Condition="Exists('../../../Version.props')" />
+
   <PropertyGroup>
+    <KonfigoVersion Condition="'$(KonfigoVersion)' == ''">0.0.1</KonfigoVersion>
+    <Version Condition="'$(Version)' == ''">$(KonfigoVersion)</Version>
+    <PackageVersion Condition="'$(PackageVersion)' == ''">$(KonfigoVersion)</PackageVersion>
+    <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">$(KonfigoVersion)</AssemblyVersion>
+    <FileVersion Condition="'$(FileVersion)' == ''">$(KonfigoVersion)</FileVersion>
+    <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(KonfigoVersion)</InformationalVersion>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
@@ -16,7 +24,17 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Authors>maximiliysiss</Authors>
-    <Version>1.0.0</Version>
+    <Company>Konfigo</Company>
+    <Product>Konfigo</Product>
+    <PackageProjectUrl>https://github.com/maximiliysiss/konfigo</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/maximiliysiss/konfigo</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>konfigo;configuration;realtime-config;grpc;options;sdk</PackageTags>
+    <PackageReleaseNotes>Initial 0.0.1 release.</PackageReleaseNotes>
+    <Copyright>Copyright (c) Konfigo contributors</Copyright>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
   <ItemGroup>

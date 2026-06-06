@@ -4,15 +4,36 @@ build-backend = "hatchling.build"
 
 [project]
 name = "konfigo"
-version = "0.1.0"
+version = "0.0.1"
 description = "Python client SDK for Konfigo Realtime Config"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
-  { name = "Konfigo" }
+  { name = "Konfigo contributors" }
+]
+keywords = ["konfigo", "configuration", "realtime-config", "grpc", "sdk"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: System :: Systems Administration",
+  "Typing :: Typed",
 ]
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/maximiliysiss/konfigo"
+Repository = "https://github.com/maximiliysiss/konfigo"
+Issues = "https://github.com/maximiliysiss/konfigo/issues"
+Documentation = "https://github.com/maximiliysiss/konfigo/tree/master/packages/python"
 
 [project.optional-dependencies]
 grpc = [
