@@ -19,8 +19,7 @@ public sealed class Startup(IConfiguration configuration)
             .AddControllers();
 
         services
-            .AddEndpointsApiExplorer()
-            .AddSwaggerGen();
+            .AddOpenApi();
 
         services
             .AddGrpc();
@@ -45,9 +44,6 @@ public sealed class Startup(IConfiguration configuration)
 
         app.UseRouting();
 
-        app.UseSwagger();
-        app.UseSwaggerUI();
-
         app.UseAuthentication();
         app.UseAuthorization();
 
@@ -56,6 +52,7 @@ public sealed class Startup(IConfiguration configuration)
 
     private static void ConfigureEndpoints(IEndpointRouteBuilder endpoints)
     {
+        endpoints.MapOpenApi();
         endpoints.MapControllers();
         endpoints.MapGrpcService<RealtimeConfigGrpcService>();
         endpoints.MapHub<RealtimeConfigHub>("/hubs/config");

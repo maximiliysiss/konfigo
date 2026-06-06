@@ -96,10 +96,12 @@ public sealed class AuthController : ControllerBase
         && !url.StartsWith("/\\");
 
     private static string GetChallengeScheme(AuthenticationProvider provider)
-        => provider switch
+    {
+        return provider switch
         {
             AuthenticationProvider.OpenId => OpenIdConnectDefaults.AuthenticationScheme,
             AuthenticationProvider.Jwt => JwtBearerDefaults.AuthenticationScheme,
             _ => Saml2Defaults.Scheme,
         };
+    }
 }

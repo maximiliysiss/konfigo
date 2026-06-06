@@ -26,25 +26,8 @@ jobs:
         id: version
         shell: bash
         run: |
+          python3 scripts/validate-version.py
           VERSION="$(tr -d '[:space:]' < VERSION)"
-          PYTHON_VERSION="$(python -c "import pathlib,tomllib; print(tomllib.loads(pathlib.Path('packages/python/pyproject.toml').read_text())['project']['version'])")"
-          FRONTEND_VERSION="$(python -c "import json,pathlib; print(json.loads(pathlib.Path('apps/frontend/package.json').read_text())['version'])")"
-          FRONTEND_LOCK_VERSION="$(python -c "import json,pathlib; print(json.loads(pathlib.Path('apps/frontend/package-lock.json').read_text())['version'])")"
-
-          if [ "$VERSION" != "$PYTHON_VERSION" ]; then
-            echo "packages/python/pyproject.toml version '${PYTHON_VERSION}' must match VERSION '${VERSION}'." >&2
-            exit 1
-          fi
-
-          if [ "$VERSION" != "$FRONTEND_VERSION" ]; then
-            echo "apps/frontend/package.json version '${FRONTEND_VERSION}' must match VERSION '${VERSION}'." >&2
-            exit 1
-          fi
-
-          if [ "$VERSION" != "$FRONTEND_LOCK_VERSION" ]; then
-            echo "apps/frontend/package-lock.json version '${FRONTEND_LOCK_VERSION}' must match VERSION '${VERSION}'." >&2
-            exit 1
-          fi
 
           if [ "${{ github.event_name }}" = "release" ]; then
             TAG="${GITHUB_REF_NAME#v}"

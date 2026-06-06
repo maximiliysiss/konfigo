@@ -39,6 +39,8 @@ The current cross-project release version is stored in [`VERSION`](VERSION) and 
 The same version is used for the backend application, .NET SDK packages, Python SDK package,
 frontend package metadata, and Docker image labels. Release tags must match this value as
 `0.0.1` or `v0.0.1`.
+Run `python3 scripts/validate-version.py` to check all duplicated version metadata; CI runs
+the same validation and fails if any copy is out of sync.
 
 Go SDK versions are resolved by the Go module ecosystem from git tags. Use the same release
 number for Go module tags when publishing the SDK.
