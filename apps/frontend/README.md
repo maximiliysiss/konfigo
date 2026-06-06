@@ -29,7 +29,12 @@ npm run dev        # http://localhost:5173
 Set the backend URL in `.env`:
 
 ```env
-PUBLIC_API_URL=http://localhost:8080
+PUBLIC_API_URL=/api
+PUBLIC_SIGNALR_URL=/hubs/config
+
+VITE_API_PROXY_TARGET=http://localhost:8080
+VITE_API_PROXY_PREFIX=/api
+VITE_API_PROXY_REWRITE_TO=/api
 ```
 
 ## Production build

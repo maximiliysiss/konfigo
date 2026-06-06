@@ -53,7 +53,7 @@ The backend starts on `http://localhost:8080`. Database migrations run automatic
 
 ```bash
 cd apps/frontend
-cp .env.example .env   # set PUBLIC_API_URL=http://localhost:8080
+cp .env.example .env   # set VITE_API_PROXY_TARGET if backend is not on http://localhost:8080
 npm install
 npm run dev
 ```
@@ -272,6 +272,10 @@ All settings follow ASP.NET Core's double-underscore (`__`) convention for neste
 | Variable | Description |
 |----------|-------------|
 | `PUBLIC_API_URL` | Base URL of the Konfigo backend |
+| `PUBLIC_SIGNALR_URL` | Base URL of the SignalR config hub |
+| `VITE_API_PROXY_TARGET` | Backend target used by the Vite dev proxy |
+| `VITE_API_PROXY_PREFIX` | Request prefix handled by the Vite dev proxy |
+| `VITE_API_PROXY_REWRITE_TO` | Backend path prefix used when proxying API requests |
 
 ## Authentication setup
 
