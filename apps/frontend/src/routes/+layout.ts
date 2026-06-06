@@ -9,10 +9,21 @@ export const ssr = false;
 const PUBLIC_ROUTES = new Set(['/login']);
 
 export const load: LayoutLoad = async ({ url, fetch }) => {
-	const response = await fetch(buildBackendUrl('/auth/me'), {
-		credentials: 'include',
-		headers: { Accept: 'application/json' }
-	});
+	let response: Response;
+
+	try {
+		response = await fetch(buildBackendUrl('/auth/me'), {
+			credentials: 'include',
+			headers: { Accept: 'application/json' }
+		});
+	} catch {
+		return {
+			user: null,
+			connectionError: {
+				message: 'The app could not reach the network or Konfigo backend. Check your connection and try again.'
+			}
+		};
+	}
 
 	let currentUser: AuthUser | null = null;
 
@@ -29,7 +40,13 @@ export const load: LayoutLoad = async ({ url, fetch }) => {
 			permissions: payload.permissions ?? []
 		};
 	} else if (response.status !== 204) {
-		throw new Error(`auth/me returned ${response.status}`);
+		return {
+			user: null,
+			connectionError: {
+				message: 'Konfigo backend is not available right now. Try again after the backend is running.',
+				status: response.status
+			}
+		};
 	}
 
 	const isPublic = PUBLIC_ROUTES.has(url.pathname);
@@ -44,7 +61,7 @@ export const load: LayoutLoad = async ({ url, fetch }) => {
 		throw redirect(302, sanitizeReturnUrl(requested) ?? '/services');
 	}
 
-	return { user: currentUser };
+	return { user: currentUser, connectionError: null };
 };
 
 function sanitizeReturnUrl(value: string | null): string | null {

@@ -417,6 +417,57 @@
 			var(--bg-base);
 	}
 
+	.connection-background {
+		min-height: 100vh;
+		display: grid;
+		place-items: center;
+		padding: 24px;
+		background: var(--bg-base);
+	}
+
+	.connection-status {
+		width: min(100%, 520px);
+		padding: 40px;
+		border-radius: 8px;
+		text-align: center;
+		box-shadow: var(--shadow-md);
+	}
+
+	.connection-status-icon {
+		width: 72px;
+		height: 72px;
+		margin: 0 auto 20px;
+		border-radius: 999px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--danger);
+		background: var(--danger-subtle);
+	}
+
+	.connection-status-title {
+		margin-top: 12px;
+		font-size: 28px;
+	}
+
+	.connection-status-message {
+		margin-top: 12px;
+		color: var(--text-secondary);
+		font-size: 15px;
+	}
+
+	.connection-status-detail {
+		margin-top: 10px;
+		color: var(--text-tertiary);
+		font-size: 13px;
+	}
+
+	.connection-status-actions {
+		margin-top: 28px;
+		display: flex;
+		justify-content: center;
+	}
+
 	@media (max-width: 767px) {
 		.app-topbar {
 			position: static;
@@ -452,6 +503,14 @@
 		}
 
 		.page-title {
+			font-size: 24px;
+		}
+
+		.connection-status {
+			padding: 28px 20px;
+		}
+
+		.connection-status-title {
 			font-size: 24px;
 		}
 	}

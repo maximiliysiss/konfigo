@@ -6,16 +6,22 @@
 	import { buildBackendUrl } from '$lib/api';
 	import { canAll, user, type AuthUser } from '$lib/stores/auth';
 	import { consumeQueuedToast, toasts } from '$lib/stores/toast';
+	import Button from '$lib/components/ui/Button.svelte';
 	import Toast from '$lib/components/ui/Toast.svelte';
 	import { onMount } from 'svelte';
 
+	type ConnectionError = {
+		message: string;
+		status?: number;
+	};
+
 	let { data, children } = $props<{
-		data: { user: AuthUser | null };
+		data: { user: AuthUser | null; connectionError: ConnectionError | null };
 		children: import('svelte').Snippet;
 	}>();
 
 	$effect(() => {
-		user.set(data.user);
+		user.set(data.connectionError ? null : data.user);
 	});
 
 	onMount(() => {
@@ -47,6 +53,10 @@
 		}
 		return 'M3 3h4v4H3zM9 3h4v4H9zM3 9h4v4H3zM9 9h4v4H9z';
 	}
+
+	function retryConnection() {
+		window.location.reload();
+	}
 </script>
 
 <svelte:head>
@@ -54,7 +64,28 @@
 	<title>Realtime Config Manager</title>
 </svelte:head>
 
-{#if showShell}
+{#if data.connectionError}
+	<div class="connection-background">
+		<section class="connection-status surface">
+			<div class="connection-status-icon" aria-hidden="true">
+				<svg viewBox="0 0 48 48" class="h-12 w-12" fill="none">
+					<path d="M14 29.5a8 8 0 0 1 11.3 0M8.5 23a17 17 0 0 1 22.8-1.2M31 9.5a29 29 0 0 1 8.5 6.2" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+					<path d="M39 29.5 29.5 39M29.5 29.5 39 39" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+					<circle cx="19.5" cy="37" r="2" fill="currentColor" />
+				</svg>
+			</div>
+			<p class="section-label">Connection unavailable</p>
+			<h1 class="connection-status-title">Cannot connect to Konfigo</h1>
+			<p class="connection-status-message">{data.connectionError.message}</p>
+			{#if data.connectionError.status}
+				<p class="connection-status-detail">Backend health check returned HTTP {data.connectionError.status}.</p>
+			{/if}
+			<div class="connection-status-actions">
+				<Button size="lg" onclick={retryConnection}>Retry</Button>
+			</div>
+		</section>
+	</div>
+{:else if showShell}
 	<div class="app-shell">
 		<header class="app-topbar">
 			<div class="topbar-left">
