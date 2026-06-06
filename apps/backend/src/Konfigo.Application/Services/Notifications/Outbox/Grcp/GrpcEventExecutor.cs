@@ -37,6 +37,7 @@ internal sealed class GrpcEventExecutor(IUpdaterService updaterService, ILogger<
             return new ChangeEvent.Request(
                 EntryId: c.EntryId,
                 Key: c.Key,
+                Type: c.Type,
                 RawValue: c.RawValue,
                 Generation: c.Generation,
                 Timestamp: c.Timestamp);

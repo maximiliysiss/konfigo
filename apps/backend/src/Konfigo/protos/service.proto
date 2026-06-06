@@ -29,6 +29,7 @@ message GetConfigResponse {
     google.protobuf.StringValue value = 2;
     int32 generation = 3;
     google.protobuf.Timestamp timestamp = 4;
+    ValueType type = 5;
   }
 }
 
@@ -80,6 +81,7 @@ message SubscriptionEvent {
     google.protobuf.StringValue value = 2;
     int32 generation = 3;
     google.protobuf.Timestamp timestamp = 4;
+    ValueType type = 5;
   }
 }
 

@@ -259,6 +259,7 @@ public sealed class RealtimeConfigGrpcServiceTests : IAsyncLifetime
                 new ChangeEvent.Request(
                     EntryId: EntryId.New(),
                     Key: "grpc.live",
+                    Type: ConfigValueType.String,
                     RawValue: "streamed",
                     Generation: 7,
                     Timestamp: StartedAt.AddMinutes(2).UtcDateTime)

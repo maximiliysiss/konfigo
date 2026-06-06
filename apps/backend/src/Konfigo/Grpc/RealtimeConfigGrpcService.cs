@@ -104,6 +104,7 @@ public class RealtimeConfigGrpcService : Client.Grpc.RealtimeConfigGrpcService.R
                 Value = entry.RawValue,
                 Generation = entry.Generation,
                 Timestamp = timestamp.UtcDateTime.ToTimestamp(),
+                Type = entry.ValueType.ToProto(),
             };
         }
     }
@@ -226,6 +227,7 @@ public class RealtimeConfigGrpcService : Client.Grpc.RealtimeConfigGrpcService.R
                 Value = entry.RawValue,
                 Generation = entry.Generation,
                 Timestamp = entry.Timestamp.ToTimestamp(),
+                Type = entry.Type.ToProto(),
             };
         }
 
@@ -239,6 +241,7 @@ public class RealtimeConfigGrpcService : Client.Grpc.RealtimeConfigGrpcService.R
                 Value = entry.RawValue,
                 Generation = entry.Generation,
                 Timestamp = timestamp.UtcDateTime.ToTimestamp(),
+                Type = entry.ValueType.ToProto(),
             };
         }
     }

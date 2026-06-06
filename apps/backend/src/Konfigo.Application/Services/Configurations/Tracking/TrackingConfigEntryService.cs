@@ -142,6 +142,7 @@ internal sealed class TrackingConfigEntryService : IConfigEntryService
             return new NotificationRequest.Request(
                 EntryId: entry.Id,
                 Key: entry.Key,
+                Type: entry.ValueType,
                 RawValue: entry.RawValue,
                 Generation: entry.Generation,
                 Timestamp: timestamp.UtcDateTime);

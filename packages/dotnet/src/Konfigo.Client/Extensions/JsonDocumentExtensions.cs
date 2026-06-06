@@ -24,9 +24,9 @@ internal static class JsonDocumentExtensions
 
             var values = property.Value.ValueKind switch
             {
-                JsonValueKind.Object => AsKeyValuePairs(property.Value.EnumerateObject(), localKey),
                 JsonValueKind.Array => AsKeyValuePairs(property.Value.EnumerateArray(), localKey),
-                _ => [(localKey, property.Value.GetString())]
+                JsonValueKind.Object => AsKeyValuePairs(property.Value.EnumerateObject(), localKey),
+                _ => [(localKey, GetValue(property.Value))]
             };
 
             foreach (var tuple in values)
@@ -42,13 +42,23 @@ internal static class JsonDocumentExtensions
 
             var values = node.ValueKind switch
             {
-                JsonValueKind.Object => AsKeyValuePairs(node.EnumerateObject(), localKey),
                 JsonValueKind.Array => AsKeyValuePairs(node.EnumerateArray(), localKey),
-                _ => [(localKey, node.GetString())]
+                JsonValueKind.Object => AsKeyValuePairs(node.EnumerateObject(), localKey),
+                _ => [(localKey, GetValue(node))]
             };
 
             foreach (var tuple in values)
                 yield return tuple;
         }
+    }
+
+    private static string? GetValue(JsonElement element)
+    {
+        return element.ValueKind switch
+        {
+            JsonValueKind.Null => null,
+            JsonValueKind.String => element.GetString(),
+            _ => element.GetRawText()
+        };
     }
 }

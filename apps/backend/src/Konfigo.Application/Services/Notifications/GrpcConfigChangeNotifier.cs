@@ -41,6 +41,7 @@ internal sealed class GrpcConfigChangeNotifier(IPubloService outboxService, ILog
             return new GrpcEvent.Request(
                 EntryId: c.EntryId,
                 Key: c.Key,
+                Type: c.Type,
                 RawValue: c.RawValue,
                 Generation: c.Generation,
                 Timestamp: c.Timestamp);
