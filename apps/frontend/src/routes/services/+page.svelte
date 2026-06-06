@@ -211,50 +211,65 @@
 	{:else}
 		<div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
 			{#each services as service}
-				<a href={`/services/${service.id}`} class="group block">
-					<Card className="h-full transition-all duration-150 group-hover:-translate-y-[1px] group-hover:border-[var(--ink)]">
-						<div class="flex h-full flex-col gap-4">
-							<div class="flex items-start justify-between gap-3">
-								<div>
-									<h2 class="font-mono text-[16px] font-semibold">{service.name}</h2>
-									<div class="service-id-pill mt-2">
-										<span class="truncate font-mono" title={service.id}>{service.id}</span>
-										<button
-											class="copy-id-button"
-											type="button"
-											aria-label="Copy service ID"
-											title="Copy service ID"
-											onclick={(event) => copyServiceId(event, service.id)}
-										>
-											<svg viewBox="0 0 16 16" class="h-3.5 w-3.5" fill="none" aria-hidden="true">
-												<rect x="6" y="5" width="7" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4" />
-												<path d="M4 10.5H3.5A1.5 1.5 0 0 1 2 9V3.5A1.5 1.5 0 0 1 3.5 2H9a1.5 1.5 0 0 1 1.5 1.5V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
-											</svg>
-										</button>
-									</div>
-									<p class="mt-2 line-clamp-2 text-[14px] text-[var(--text-secondary)]">{service.description ?? 'No description provided.'}</p>
+				<a href={`/services/${service.id}`} class="group block h-full">
+					<Card className="service-card h-full">
+						<div class="service-card-content">
+							<div class="service-card-glow" aria-hidden="true"></div>
+							<div class="service-card-topline">
+								<div class="service-avatar" aria-hidden="true">
+									<span>{service.name.slice(0, 2).toUpperCase()}</span>
 								</div>
-								<Badge variant="success">Active</Badge>
+								<Badge variant="success" className="gap-[6px] pr-[9px]">
+									<span class="h-1.5 w-1.5 rounded-full bg-[var(--success)]"></span>
+									Active
+								</Badge>
 							</div>
 
-							<div class="text-[13px] text-[var(--text-secondary)]">
-								{#if service.repositoryUrl}
-									<div class="flex items-center gap-2">
-										<svg viewBox="0 0 16 16" class="h-4 w-4 text-[var(--text-tertiary)]" fill="none" aria-hidden="true">
-											<path d="M6 10.5 10 6.5M5 6.5H4a2 2 0 0 0 0 4h1M11 6.5h1a2 2 0 0 1 0 4h-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+							<div class="service-card-main">
+								<h2 class="service-title">{service.name}</h2>
+								<p class="service-description">{service.description ?? 'No description provided.'}</p>
+							</div>
+
+							<div class="service-meta-grid">
+								<div class="service-meta-item">
+									<span class="service-meta-label">Versions</span>
+									<strong>{service.versionCount ?? 0}</strong>
+								</div>
+								<div class="service-meta-item min-w-0">
+									<span class="service-meta-label">Repository</span>
+									{#if service.repositoryUrl}
+										<span class="service-repository" title={service.repositoryUrl}>{service.repositoryUrl}</span>
+									{:else}
+										<span class="service-empty-meta">Not linked</span>
+									{/if}
+								</div>
+							</div>
+
+							<div class="service-card-footer">
+								<div class="service-id-pill">
+									<svg viewBox="0 0 16 16" class="h-3.5 w-3.5 flex-none" fill="none" aria-hidden="true">
+										<path d="M5.5 3.5h5A2.5 2.5 0 0 1 13 6v4a2.5 2.5 0 0 1-2.5 2.5h-5A2.5 2.5 0 0 1 3 10V6a2.5 2.5 0 0 1 2.5-2.5Z" stroke="currentColor" stroke-width="1.4" />
+										<path d="M6 7.75h4M6 10h2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+									</svg>
+									<span class="truncate font-mono" title={service.id}>{service.id}</span>
+									<button
+										class="copy-id-button"
+										type="button"
+										aria-label="Copy service ID"
+										title="Copy service ID"
+										onclick={(event) => copyServiceId(event, service.id)}
+									>
+										<svg viewBox="0 0 16 16" class="h-3.5 w-3.5" fill="none" aria-hidden="true">
+											<rect x="6" y="5" width="7" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4" />
+											<path d="M4 10.5H3.5A1.5 1.5 0 0 1 2 9V3.5A1.5 1.5 0 0 1 3.5 2H9a1.5 1.5 0 0 1 1.5 1.5V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
 										</svg>
-										<span class="truncate text-[var(--accent-text)]">{service.repositoryUrl}</span>
-									</div>
-								{:else}
-									<span class="text-[var(--text-tertiary)]">No repository linked</span>
-								{/if}
-							</div>
-
-							<div class="mt-auto flex items-center justify-between gap-3">
-								<div class="flex flex-wrap gap-2">
-									<span class="metric-pill">{service.versionCount ?? 0} versions</span>
+									</button>
 								</div>
-								<Button variant="ghost" size="sm">Open</Button>
+								<span class="open-indicator" aria-hidden="true">
+									<svg viewBox="0 0 16 16" class="h-4 w-4" fill="none">
+										<path d="M5 3.5 9.5 8 5 12.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+									</svg>
+								</span>
 							</div>
 						</div>
 					</Card>
@@ -273,22 +288,15 @@
 </section>
 
 <style>
-	.line-clamp-2 {
-		display: -webkit-box;
-		line-clamp: 2;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-	}
-
 	.service-id-pill {
 		display: inline-flex;
 		max-width: 100%;
 		align-items: center;
 		gap: 6px;
-		border: 1px solid var(--border);
+		min-width: 0;
+		border: 1px solid color-mix(in srgb, var(--border-strong) 54%, transparent);
 		border-radius: 7px;
-		background: var(--bg-subtle);
+		background: color-mix(in srgb, var(--bg-subtle) 76%, transparent);
 		padding: 3px 4px 3px 8px;
 		color: var(--text-secondary);
 		font-size: 11px;
@@ -311,5 +319,186 @@
 	.copy-id-button:hover {
 		background: var(--bg-elevated);
 		color: var(--text-primary);
+	}
+
+	:global(.service-card) {
+		position: relative;
+		height: 100%;
+		border-color: color-mix(in srgb, var(--border) 82%, transparent);
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--bg-elevated) 92%, transparent), color-mix(in srgb, var(--bg-surface) 96%, transparent)),
+			var(--bg-surface);
+		transition:
+			border-color 180ms ease,
+			box-shadow 180ms ease,
+			transform 180ms ease;
+	}
+
+	:global(.group:hover .service-card),
+	:global(.group:focus-visible .service-card) {
+		transform: translateY(-3px);
+		border-color: color-mix(in srgb, var(--accent) 62%, var(--border-strong));
+		box-shadow: 0 20px 44px color-mix(in srgb, var(--ink) 12%, transparent);
+	}
+
+	.service-card-content {
+		position: relative;
+		display: flex;
+		min-height: 246px;
+		height: 100%;
+		flex-direction: column;
+		gap: 18px;
+	}
+
+	.service-card-glow {
+		position: absolute;
+		inset: -20px -20px auto auto;
+		width: 120px;
+		height: 120px;
+		background: radial-gradient(circle, color-mix(in srgb, var(--accent) 18%, transparent), transparent 66%);
+		pointer-events: none;
+	}
+
+	.service-card-topline,
+	.service-card-footer {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		min-width: 0;
+	}
+
+	.service-avatar {
+		width: 42px;
+		height: 42px;
+		flex: 0 0 auto;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 8px;
+		border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+		background:
+			linear-gradient(145deg, color-mix(in srgb, var(--accent-subtle) 78%, var(--bg-elevated)), var(--bg-elevated));
+		color: var(--accent-text);
+		font-family: 'JetBrains Mono', monospace;
+		font-size: 13px;
+		font-weight: 700;
+		letter-spacing: 0;
+		box-shadow: inset 0 1px 0 color-mix(in srgb, white 52%, transparent);
+	}
+
+	.service-card-main {
+		position: relative;
+		min-width: 0;
+	}
+
+	.service-title {
+		font-family: 'JetBrains Mono', monospace;
+		font-size: 17px;
+		line-height: 1.35;
+		font-weight: 700;
+		overflow-wrap: anywhere;
+	}
+
+	.service-description {
+		display: -webkit-box;
+		margin-top: 9px;
+		color: var(--text-secondary);
+		font-size: 14px;
+		line-clamp: 2;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.service-meta-grid {
+		display: grid;
+		grid-template-columns: minmax(94px, 0.42fr) minmax(0, 1fr);
+		gap: 10px;
+	}
+
+	.service-meta-item {
+		min-height: 64px;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		gap: 5px;
+		border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+		border-radius: 8px;
+		background: color-mix(in srgb, var(--bg-subtle) 56%, transparent);
+		padding: 10px;
+	}
+
+	.service-meta-label {
+		color: var(--text-tertiary);
+		font-size: 10px;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+	}
+
+	.service-meta-item strong {
+		font-size: 20px;
+		line-height: 1;
+	}
+
+	.service-repository,
+	.service-empty-meta {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		color: var(--accent-text);
+		font-size: 12px;
+		font-weight: 600;
+	}
+
+	.service-empty-meta {
+		color: var(--text-tertiary);
+	}
+
+	.service-card-footer {
+		margin-top: auto;
+		padding-top: 2px;
+	}
+
+	.open-indicator {
+		width: 32px;
+		height: 32px;
+		flex: 0 0 auto;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 7px;
+		border: 1px solid var(--border);
+		background: var(--bg-elevated);
+		color: var(--text-secondary);
+		transition:
+			transform 180ms ease,
+			border-color 180ms ease,
+			color 180ms ease;
+	}
+
+	:global(.group:hover) .open-indicator,
+	:global(.group:focus-visible) .open-indicator {
+		transform: translateX(2px);
+		border-color: var(--accent);
+		color: var(--accent-text);
+	}
+
+	@media (max-width: 420px) {
+		.service-meta-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.service-card-footer {
+			align-items: stretch;
+		}
+
+		.open-indicator {
+			display: none;
+		}
 	}
 </style>
