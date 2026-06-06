@@ -35,6 +35,41 @@ public class VersionServiceTests
 
         // Assert
         versionId.Value.Should().Be(id);
+
+        await realtimeConfigGrpcService
+            .DidNotReceive()
+            .CreateVersionAsync(Arg.Any<CreateVersionRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CreateAsync_ShouldCheckVersionByConfiguredServiceIdAndVersion()
+    {
+        // Arrange
+        IsVersionExistRequest? request = null;
+
+        var options = new RealtimeConfigOptions
+        {
+            ServiceId = "service-id",
+            Version = "1.2.3",
+        };
+
+        var realtimeConfigGrpcService = Substitute.For<IRealtimeConfigClient>();
+        realtimeConfigGrpcService
+            .IsVersionExistsAsync(Arg.Any<IsVersionExistRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new IsVersionExistResponse { VersionId = Guid.NewGuid().ToString() })
+            .AndDoes(x => request = x.Arg<IsVersionExistRequest>());
+
+        var versionService = Create(rtcOptions: options, service: realtimeConfigGrpcService);
+
+        // Act
+        await versionService.CreateAsync(CancellationToken.None);
+
+        // Assert
+        request.Should().BeEquivalentTo(new
+        {
+            options.ServiceId,
+            options.Version,
+        });
     }
 
     [Fact]
@@ -44,6 +79,12 @@ public class VersionServiceTests
         CreateVersionRequest? request = null;
 
         var id = Guid.NewGuid().ToString();
+
+        var options = new RealtimeConfigOptions
+        {
+            ServiceId = "service-id",
+            Version = "1.2.3",
+        };
 
         var realtimeConfigGrpcService = Substitute.For<IRealtimeConfigClient>();
         realtimeConfigGrpcService
@@ -57,25 +98,25 @@ public class VersionServiceTests
 
         var newEntry = new ClassDefinition.OptionDefinition(
             Key: "Name",
-            Name: string.Empty,
-            Description: null,
+            Name: "Created",
+            Description: "Created description",
             Type: ValueType.Array,
-            DefaultValue: null,
+            DefaultValue: "[]",
             EnumValues: null);
 
         var updated = new ClassDefinition.OptionDefinition(
             Key: "Name+",
-            Name: string.Empty,
-            Description: null,
-            Type: ValueType.Boolean,
-            DefaultValue: null,
-            EnumValues: null);
+            Name: "Updated",
+            Description: "Updated description",
+            Type: ValueType.Enum,
+            DefaultValue: "B",
+            EnumValues: ["A", "B"]);
 
         var classDefinition = new ClassDefinition(
             Key: string.Empty,
             Type: typeof(object),
-            Name: string.Empty,
-            Description: string.Empty,
+            Name: "Class name",
+            Description: "Class description",
             Options: [newEntry, updated]);
 
         var assemblyService = Substitute.For<IAssemblyService>();
@@ -83,7 +124,10 @@ public class VersionServiceTests
             .GetDefinitions()
             .Returns([classDefinition]);
 
-        var versionService = Create(service: realtimeConfigGrpcService, assemblyService: assemblyService);
+        var versionService = Create(
+            rtcOptions: options,
+            service: realtimeConfigGrpcService,
+            assemblyService: assemblyService);
 
         // Act
         var versionId = await versionService.CreateAsync(CancellationToken.None);
@@ -91,14 +135,34 @@ public class VersionServiceTests
         // Assert
         var expected = new
         {
+            options.ServiceId,
+            options.Version,
             Classes = new[]
             {
                 new
                 {
+                    Name = classDefinition.Name,
+                    Description = classDefinition.Description,
                     Entries = new[]
                     {
-                        new { Key = newEntry.Key, Value = newEntry.DefaultValue, ValueType = newEntry.Type },
-                        new { Key = updated.Key, Value = updated.DefaultValue, ValueType = updated.Type }
+                        new
+                        {
+                            newEntry.Key,
+                            newEntry.Name,
+                            newEntry.Description,
+                            Value = newEntry.DefaultValue,
+                            ValueType = newEntry.Type,
+                            EnumValues = string.Empty,
+                        },
+                        new
+                        {
+                            updated.Key,
+                            updated.Name,
+                            updated.Description,
+                            Value = updated.DefaultValue,
+                            ValueType = updated.Type,
+                            EnumValues = "A,B",
+                        }
                     }
                 }
             }

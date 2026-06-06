@@ -332,6 +332,106 @@ public class RealtimeConfigProviderTests
         value.Should().Be("current");
     }
 
+    [Fact]
+    public void Set_ShouldRemoveStaleJsonKeys_WhenStructuredValueShrinks()
+    {
+        // Arrange
+        var configEntry = GenerateConfigEntry() with
+        {
+            Key = "Root",
+            Type = ValueType.Json,
+            Generation = 2,
+            Value = """{"First":"one","Second":"two"}""",
+        };
+
+        var nextGenerationConfigEntry = configEntry with
+        {
+            Generation = 3,
+            Value = """{"First":"updated"}""",
+        };
+
+        var provider = Create();
+
+        // Act
+        provider.Set([configEntry]);
+        provider.Set([nextGenerationConfigEntry]);
+
+        // Assert
+        provider.TryGet("Root:First", out var first).Should().BeTrue();
+        first.Should().Be("updated");
+
+        provider.TryGet("Root:Second", out _).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Set_ShouldRemoveStaleArrayKeys_WhenStructuredValueShrinks()
+    {
+        // Arrange
+        var configEntry = GenerateConfigEntry() with
+        {
+            Key = "Root",
+            Type = ValueType.Array,
+            Generation = 2,
+            Value = """["first","second"]""",
+        };
+
+        var nextGenerationConfigEntry = configEntry with
+        {
+            Generation = 3,
+            Value = """["updated"]""",
+        };
+
+        var provider = Create();
+
+        // Act
+        provider.Set([configEntry]);
+        provider.Set([nextGenerationConfigEntry]);
+
+        // Assert
+        provider.TryGet("Root:0", out var first).Should().BeTrue();
+        first.Should().Be("updated");
+
+        provider.TryGet("Root:1", out _).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Set_ShouldNotRemoveSiblingKeys_WhenStructuredValueIsUpdated()
+    {
+        // Arrange
+        var configEntry = GenerateConfigEntry() with
+        {
+            Key = "Root",
+            Type = ValueType.Json,
+            Generation = 2,
+            Value = """{"Child":"initial"}""",
+        };
+
+        var siblingConfigEntry = GenerateConfigEntry() with
+        {
+            Key = "RootSibling",
+            Value = "sibling",
+        };
+
+        var nextGenerationConfigEntry = configEntry with
+        {
+            Generation = 3,
+            Value = """{"Child":"updated"}""",
+        };
+
+        var provider = Create();
+
+        // Act
+        provider.Set([configEntry, siblingConfigEntry]);
+        provider.Set([nextGenerationConfigEntry]);
+
+        // Assert
+        provider.TryGet("Root:Child", out var child).Should().BeTrue();
+        child.Should().Be("updated");
+
+        provider.TryGet("RootSibling", out var sibling).Should().BeTrue();
+        sibling.Should().Be("sibling");
+    }
+
     private static RealtimeConfigProvider Create(ConfigEntry[]? entries = null, VersionId? versionId = null)
         => new(versionId ?? VersionId.Empty, entries ?? [], NullLogger<RealtimeConfigProvider>.Instance);
 

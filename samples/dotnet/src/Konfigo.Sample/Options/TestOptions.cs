@@ -21,7 +21,13 @@ public sealed class TestOptions
     public ServiceType Type { get; set; } = ServiceType.Web;
 
     [ConfigKey(DefaultValue = "[1,2,3]")]
-    public int[] Numbers { get; set; } = [1, 2, 3];
+    public int[] Numbers { get; set; } = [];
+
+    [ConfigKey(DefaultValue = "{\"1\":1,\"2\":2}")]
+    public Dictionary<int, int> Values { get; set; } = [];
+
+    [ConfigKey(DefaultValue = "{\"Value\":0,\"Str\":\"InnerOptions\"}")]
+    public InnerOptions Inner { get; set; } = new InnerOptions();
 
     public enum ServiceType
     {
@@ -29,5 +35,11 @@ public sealed class TestOptions
         Web,
         Mobile,
         Desktop
+    }
+
+    public sealed class InnerOptions
+    {
+        public int Value { get; set; }
+        public string Str { get; set; } = "InnerOptions";
     }
 }

@@ -55,7 +55,22 @@ internal sealed class RealtimeConfigProvider : ConfigurationProvider
             if (_generations.TryGetValue(key, out var current) && current >= newGeneration)
                 continue;
 
-            foreach (var (k, v) in Unwind(key, type, value))
+            var unwindedValues = Unwind(key, type, value)
+                .ToDictionary(kvp => kvp.key, kvp => kvp.value, StringComparer.OrdinalIgnoreCase);
+
+            if (type is ValueType.Json or ValueType.Array)
+            {
+                const StringComparison ordinalIgnoreCase = StringComparison.OrdinalIgnoreCase;
+
+                var invalidKeys = Data.Keys
+                    .Where(k => k.StartsWith($"{key}:", ordinalIgnoreCase) && !unwindedValues.ContainsKey(k))
+                    .ToArray();
+
+                foreach (var invalidKey in invalidKeys)
+                    Data.Remove(invalidKey);
+            }
+
+            foreach (var (k, v) in unwindedValues)
                 Data[k] = v;
 
             _generations[key] = newGeneration;
