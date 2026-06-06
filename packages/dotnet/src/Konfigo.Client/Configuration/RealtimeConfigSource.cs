@@ -65,6 +65,7 @@ internal sealed class RealtimeConfigSource(RealtimeConfigOptions options) : ICon
             return new ConfigEntry(
                 Key: c.Key,
                 Value: c.Value,
+                Type: c.Type,
                 Generation: c.Generation,
                 Timestamp: c.Timestamp.ToDateTimeOffset());
         }

@@ -152,6 +152,7 @@ internal sealed class RealtimeConfigHostedService : RestartableService
             return new ConfigEntry(
                 Key: ev.Key,
                 Value: ev.Value,
+                Type: ev.Type,
                 Generation: ev.Generation,
                 Timestamp: ev.Timestamp.ToDateTimeOffset());
         }

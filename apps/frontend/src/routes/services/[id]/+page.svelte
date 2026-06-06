@@ -6,7 +6,6 @@
 	import type {
 		ApplicationServiceContract,
 		AuditLogContract,
-		ConfigEntryContract,
 		ConfigVersionContract,
 		PageResponse
 	} from '$lib/api';
@@ -23,7 +22,7 @@
 
 	type TabKey = 'info' | 'versions' | 'audit';
 	type ServiceDetail = ApplicationServiceContract;
-	type VersionWithStats = ConfigVersionContract & { entryCount: number };
+	type VersionDetail = ConfigVersionContract;
 	type AuditEntry = AuditLogContract;
 	type AuditDetail = { label: string; value: string };
 	type AuditSummary = {
@@ -37,7 +36,7 @@
 
 	let tab = $state<TabKey>('info');
 	let service = $state<ServiceDetail | null>(null);
-	let versions = $state<VersionWithStats[]>([]);
+	let versions = $state<VersionDetail[]>([]);
 	let audit = $state<AuditEntry[]>([]);
 	let auditPage = $state(1);
 	let auditPageSize = 10;
@@ -75,7 +74,36 @@
 		return 'info';
 	}
 
+	function versionTimestamp(version: VersionDetail): number {
+		const parsed = new Date(version.createdAt).valueOf();
+		return Number.isNaN(parsed) ? 0 : parsed;
+	}
+
+	function sortVersions(nextVersions: VersionDetail[]): VersionDetail[] {
+		return [...nextVersions].sort((a, b) => versionTimestamp(b) - versionTimestamp(a));
+	}
+
+	function latestVersion(): VersionDetail | null {
+		return versions[0] ?? null;
+	}
+
+	async function openLatestVersion() {
+		const version = latestVersion();
+		if (!version) {
+			tab = 'versions';
+			if (window.location.hash !== '#versions') window.history.replaceState(null, '', '#versions');
+			return;
+		}
+
+		await goto(`/services/${currentServiceId()}/versions/${version.id}`);
+	}
+
 	function setTab(nextTab: TabKey) {
+		if (nextTab === 'versions') {
+			void openLatestVersion();
+			return;
+		}
+
 		tab = nextTab;
 		if (window.location.hash !== `#${nextTab}`) window.history.replaceState(null, '', `#${nextTab}`);
 		if (nextTab === 'audit') void loadAudit(auditPage);
@@ -98,17 +126,7 @@
 
 	async function loadVersions() {
 		const raw = await apiRequest<ConfigVersionContract[]>(`/configversions/${currentServiceId()}`);
-		const enriched = await Promise.all(
-			raw.map(async (version) => {
-				try {
-					const entries = await apiRequest<ConfigEntryContract[]>(`/configentries/${currentServiceId()}/${version.id}`);
-					return { ...version, entryCount: entries.length };
-				} catch {
-					return { ...version, entryCount: 0 };
-				}
-			})
-		);
-		versions = enriched;
+		versions = sortVersions(raw);
 	}
 
 	async function loadAudit(pageNumber = 1) {
@@ -132,6 +150,10 @@
 		error = '';
 		try {
 			await Promise.all([loadService(), loadVersions()]);
+			if (tab === 'versions') {
+				await openLatestVersion();
+				return;
+			}
 			if (tab === 'audit') await loadAudit(auditPage);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load service';
@@ -144,6 +166,10 @@
 		setTab(parseHashToTab(window.location.hash));
 		const onHashChange = () => {
 			tab = parseHashToTab(window.location.hash);
+			if (tab === 'versions') {
+				void openLatestVersion();
+				return;
+			}
 			if (tab === 'audit') void loadAudit(auditPage);
 		};
 		window.addEventListener('hashchange', onHashChange);
@@ -202,10 +228,6 @@
 	function toggleRow(index: number) {
 		const key = `${auditPage}-${index}`;
 		expandedRows = { ...expandedRows, [key]: !expandedRows[key] };
-	}
-
-	async function openVersion(versionId: string) {
-		await goto(`/services/${currentServiceId()}/versions/${versionId}`);
 	}
 
 	async function copyServiceId(serviceId: string) {
@@ -444,20 +466,7 @@
 						</div>
 					{/snippet}
 
-					<div class="grid gap-3">
-						{#each versions as version}
-							<button class="rounded-[12px] border border-[var(--border)] bg-[var(--bg-elevated)] p-4 text-left transition-all duration-150 hover:-translate-y-[1px] hover:border-[var(--border-strong)]" type="button" onclick={() => openVersion(version.id)}>
-								<div class="flex items-start justify-between gap-3">
-									<div>
-										<h3 class="text-[16px] font-semibold text-[var(--accent-text)]">{version.versionLabel}</h3>
-										<p class="mt-2 text-[14px] text-[var(--text-secondary)]">{version.description ?? 'No description.'}</p>
-									</div>
-									<Badge variant="default">{version.entryCount} entries</Badge>
-								</div>
-								<p class="mt-4 text-[12px] text-[var(--text-tertiary)]">{prettyDate(version.createdAt)}</p>
-							</button>
-						{/each}
-					</div>
+					<EmptyState title="No versions yet" description="Create the first version before adding configuration entries." />
 				</Card>
 			{:else}
 				<Card>

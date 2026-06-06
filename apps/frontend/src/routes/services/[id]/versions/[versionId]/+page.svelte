@@ -53,9 +53,12 @@
 
 	let service = $state<ServiceDetail | null>(null);
 	let version = $state<VersionDetail | null>(null);
+	let versions = $state<VersionDetail[]>([]);
 	let entries = $state<ConfigEntry[]>([]);
 	let loading = $state(true);
+	let entriesLoading = $state(false);
 	let error = $state('');
+	let entriesError = $state('');
 	let actionError = $state('');
 
 	let showPanel = $state(false);
@@ -65,6 +68,7 @@
 	let formKey = $state('');
 	let formValueType = $state<ConfigValueType>(CONFIG_VALUE_TYPE.String);
 	let formRawValue = $state('');
+	let formArrayItems = $state<string[]>(['']);
 	let formEnumDefinition = $state('');
 	let formDescription = $state('');
 	let formGroupName = $state('');
@@ -72,6 +76,7 @@
 
 	let inlineId = $state('');
 	let inlineValue = $state('');
+	let inlineArrayItems = $state<string[]>([]);
 	let pendingValues = $state<Record<string, string>>({});
 	let showOnlyChanged = $state(false);
 	let batchSaving = $state(false);
@@ -83,12 +88,16 @@
 	let toasts = $state<Toast[]>([]);
 	let toastSeed = 1;
 	let connection: HubConnection | null = null;
+	let connectionServiceId = '';
+	let connectionVersionId = '';
+	let mounted = false;
+	let activePageKey = '';
 	let collapsedGroups = $state<Record<string, boolean>>({});
 	let changedRows = $state<Record<string, number>>({});
 	let subscriptionPulse = $state(false);
 
-	const serviceId = $derived($page.params.id);
-	const versionId = $derived($page.params.versionId);
+	const serviceId = $derived($page.params.id ?? '');
+	const versionId = $derived($page.params.versionId ?? '');
 	const userCanAll = $derived(canAll($user));
 	const userCanChange = $derived(canChange($user));
 	const canSetExistingEntries = $derived(userCanChange);
@@ -158,6 +167,19 @@
 
 	function normalizedGroupName(value?: string | null): string {
 		return value?.trim() ?? '';
+	}
+
+	function versionTimestamp(version: VersionDetail): number {
+		const parsed = new Date(version.createdAt).valueOf();
+		return Number.isNaN(parsed) ? 0 : parsed;
+	}
+
+	function sortVersions(nextVersions: VersionDetail[]): VersionDetail[] {
+		return [...nextVersions].sort((a, b) => versionTimestamp(b) - versionTimestamp(a));
+	}
+
+	function versionHref(nextVersionId: string): string {
+		return `/services/${serviceId}/versions/${nextVersionId}`;
 	}
 
 	function collapseStorageKey(groupName: string): string {
@@ -260,6 +282,72 @@
 		return normalizeValueType(valueType) === CONFIG_VALUE_TYPE.Boolean;
 	}
 
+	function isArrayValueType(valueType: number | string): boolean {
+		return normalizeValueType(valueType) === CONFIG_VALUE_TYPE.Array;
+	}
+
+	function parseArrayItems(raw?: string | null): string[] {
+		const normalized = String(raw ?? '').trim();
+		if (!normalized) return [];
+
+		try {
+			const parsed = JSON.parse(normalized);
+			if (!Array.isArray(parsed)) return [];
+			return parsed.map((item) => {
+				if (typeof item === 'string') return item;
+				const serialized = JSON.stringify(item);
+				return serialized === undefined ? String(item) : serialized;
+			});
+		} catch {
+			return normalized
+				.split('\n')
+				.map((item) => item.trim())
+				.filter(Boolean);
+		}
+	}
+
+	function arrayItemsForDisplay(raw?: string | null): string[] {
+		return parseArrayItems(raw);
+	}
+
+	function serializeArrayItems(items: string[]): string {
+		return JSON.stringify(
+			items.map((item) => {
+				const trimmed = item.trim();
+				if (!trimmed) return item;
+				try {
+					return JSON.parse(trimmed);
+				} catch {
+					return item;
+				}
+			})
+		);
+	}
+
+	function addFormArrayItem() {
+		formArrayItems = [...formArrayItems, ''];
+	}
+
+	function updateFormArrayItem(index: number, value: string) {
+		formArrayItems = formArrayItems.map((item, itemIndex) => (itemIndex === index ? value : item));
+	}
+
+	function removeFormArrayItem(index: number) {
+		formArrayItems = formArrayItems.filter((_, itemIndex) => itemIndex !== index);
+	}
+
+	function addInlineArrayItem() {
+		inlineArrayItems = [...inlineArrayItems, ''];
+	}
+
+	function updateInlineArrayItem(index: number, value: string) {
+		inlineArrayItems = inlineArrayItems.map((item, itemIndex) => (itemIndex === index ? value : item));
+	}
+
+	function removeInlineArrayItem(index: number) {
+		inlineArrayItems = inlineArrayItems.filter((_, itemIndex) => itemIndex !== index);
+	}
+
 	function splitEnumValues(enumDefinition?: string | null): string[] {
 		return (enumDefinition ?? '')
 			.split(',')
@@ -334,6 +422,7 @@
 		formKey = '';
 		formValueType = CONFIG_VALUE_TYPE.String;
 		formRawValue = '';
+		formArrayItems = [''];
 		formEnumDefinition = '';
 		formDescription = '';
 		formGroupName = normalizedGroupName(groupName);
@@ -356,6 +445,7 @@
 		formRawValue = isBooleanValueType(entry.valueType)
 			? normalizeBooleanValue(entry.rawValue ?? 'false')
 			: entry.rawValue ?? '';
+		formArrayItems = isArrayValueType(entry.valueType) ? parseArrayItems(entry.rawValue) : [''];
 		formEnumDefinition = entry.enumDefinition ?? '';
 		formDescription = entry.description ?? '';
 		formGroupName = normalizedGroupName(entry.groupName);
@@ -405,22 +495,29 @@
 		}, 2600);
 	}
 
-	async function loadPage() {
+	function applyEntries(nextEntries: ConfigEntry[]) {
+		entries = nextEntries.map((x) => ({ ...x, updatedAt: null }));
+		pendingValues = {};
+		showOnlyChanged = false;
+		cancelInlineEdit();
+		loadCollapsedState();
+	}
+
+	async function loadInitialPage() {
 		loading = true;
 		error = '';
+		entriesError = '';
 		try {
-			const [serviceData, versionData] = await Promise.all([
+			const [serviceData, versionData, versionList] = await Promise.all([
 				apiRequest<ServiceDetail>(`/services/${serviceId}`),
-				apiRequest<VersionDetail>(`/configversions/${serviceId}/${versionId}`)
+				apiRequest<VersionDetail>(`/configversions/${serviceId}/${versionId}`),
+				apiRequest<VersionDetail[]>(`/configversions/${serviceId}`)
 			]);
 			const entryData = await apiRequest<ConfigEntry[]>(`/configentries/${serviceId}/${versionId}`);
 			service = serviceData;
 			version = versionData;
-			entries = entryData.map((x) => ({ ...x, updatedAt: null }));
-			pendingValues = {};
-			showOnlyChanged = false;
-			cancelInlineEdit();
-			loadCollapsedState();
+			versions = sortVersions(versionList);
+			applyEntries(entryData);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load entries';
 		} finally {
@@ -428,9 +525,39 @@
 		}
 	}
 
+	async function loadVersionEntries(nextVersionId = versionId) {
+		const requestKey = `${serviceId}:${nextVersionId}`;
+		entriesLoading = true;
+		entriesError = '';
+		actionError = '';
+		pendingValues = {};
+		showOnlyChanged = false;
+		cancelInlineEdit();
+		changedRows = {};
+
+		const localVersion = versions.find((item) => item.id === nextVersionId);
+		if (localVersion) version = localVersion;
+
+		try {
+			const [versionData, entryData] = await Promise.all([
+				localVersion ? Promise.resolve(localVersion) : apiRequest<VersionDetail>(`/configversions/${serviceId}/${nextVersionId}`),
+				apiRequest<ConfigEntry[]>(`/configentries/${serviceId}/${nextVersionId}`)
+			]);
+			if (requestKey !== activePageKey) return;
+			version = versionData;
+			applyEntries(entryData);
+		} catch (e) {
+			if (requestKey !== activePageKey) return;
+			entriesError = e instanceof Error ? e.message : 'Failed to load entries';
+		} finally {
+			if (requestKey === activePageKey) entriesLoading = false;
+		}
+	}
+
 	async function savePanel() {
 		actionError = '';
-		const validation = validateValue(formValueType, formRawValue, formEnumDefinition);
+		const rawForSave = formValueType === CONFIG_VALUE_TYPE.Array ? serializeArrayItems(formArrayItems) : formRawValue;
+		const validation = validateValue(formValueType, rawForSave, formEnumDefinition);
 		if (validation) {
 			actionError = validation;
 			return;
@@ -442,7 +569,7 @@
 		saving = true;
 		try {
 			if (panelMode === 'create') {
-				const rawValue = normalizeRawValueForSave(formRawValue, formValueType);
+				const rawValue = normalizeRawValueForSave(rawForSave, formValueType);
 				if (browser && formValueType === CONFIG_VALUE_TYPE.Number) {
 					console.debug('Saving number config entry', { panelMode, key: formKey, rawValue });
 				}
@@ -461,7 +588,7 @@
 				});
 				upsertLocalEntry(created);
 			} else {
-				const rawValue = normalizeRawValueForSave(formRawValue, formValueType);
+				const rawValue = normalizeRawValueForSave(rawForSave, formValueType);
 				if (browser && formValueType === CONFIG_VALUE_TYPE.Number) {
 					console.debug('Saving number config entry', { panelMode, key: formKey, rawValue });
 				}
@@ -522,24 +649,27 @@
 		inlineValue = isBooleanValueType(entry.valueType)
 			? normalizeBooleanValue(getEntryValue(entry) || 'false')
 			: getEntryValue(entry);
+		inlineArrayItems = isArrayValueType(entry.valueType) ? parseArrayItems(getEntryValue(entry)) : [];
 	}
 
 	function cancelInlineEdit() {
 		inlineId = '';
 		inlineValue = '';
+		inlineArrayItems = [];
 	}
 
 	function saveInline(entry: ConfigEntry) {
 		if (!inlineId) return;
 		const type = normalizeValueType(entry.valueType);
-		const validation = validateValue(type, inlineValue, entry.enumDefinition ?? '');
+		const rawForSave = type === CONFIG_VALUE_TYPE.Array ? serializeArrayItems(inlineArrayItems) : inlineValue;
+		const validation = validateValue(type, rawForSave, entry.enumDefinition ?? '');
 		if (validation) {
 			actionError = validation;
 			return;
 		}
 
 		actionError = '';
-		setPendingValue(entry, String(normalizeRawValueForSave(inlineValue, type)));
+		setPendingValue(entry, String(normalizeRawValueForSave(rawForSave, type)));
 		cancelInlineEdit();
 	}
 
@@ -596,7 +726,7 @@
 		connection.on('ConfigChanged', (payload: any) => {
 			const requests = (payload?.requests ?? payload?.Requests ?? []) as { id?: string; Id?: string; value?: string | null; Value?: string | null }[];
 			if (requests.length === 0) {
-				void loadPage();
+				void loadVersionEntries(connectionVersionId || versionId);
 				return;
 			}
 
@@ -607,7 +737,7 @@
 
 				const idx = entries.findIndex((entry) => entry.id === id);
 				if (idx < 0) {
-					void loadPage();
+					void loadVersionEntries(connectionVersionId || versionId);
 					continue;
 				}
 
@@ -633,27 +763,56 @@
 
 		await connection.start();
 		await connection.invoke('JoinVersionGroup', serviceId, versionId);
+		connectionServiceId = serviceId;
+		connectionVersionId = versionId;
 	}
 
 	async function teardownRealtime() {
 		if (!connection) return;
 		try {
-			await connection.invoke('LeaveVersionGroup', serviceId, versionId);
+			await connection.invoke('LeaveVersionGroup', connectionServiceId, connectionVersionId);
 		} catch {
 			// no-op
 		}
 		await connection.stop();
 		connection = null;
+		connectionServiceId = '';
+		connectionVersionId = '';
+	}
+
+	async function loadCurrentVersionPage() {
+		const pageKey = `${serviceId}:${versionId}`;
+		activePageKey = pageKey;
+		await teardownRealtime();
+		if (!service || versions.length === 0) {
+			await loadInitialPage();
+		} else {
+			await loadVersionEntries(versionId);
+		}
+		if (activePageKey === pageKey && !error && !entriesError) await initRealtime();
 	}
 
 	onMount(() => {
-		void loadPage().then(() => initRealtime());
-		return () => void teardownRealtime();
+		mounted = true;
+		void loadCurrentVersionPage();
+		return () => {
+			mounted = false;
+			void teardownRealtime();
+		};
+	});
+
+	$effect(() => {
+		const pageKey = `${serviceId}:${versionId}`;
+		if (!mounted || pageKey === activePageKey) return;
+		void loadCurrentVersionPage();
 	});
 
 	$effect(() => {
 		if (formValueType === CONFIG_VALUE_TYPE.Boolean && formRawValue !== 'true' && formRawValue !== 'false') {
 			formRawValue = 'false';
+		}
+		if (formValueType === CONFIG_VALUE_TYPE.Array && formArrayItems.length === 0) {
+			formArrayItems = [''];
 		}
 	});
 </script>
@@ -686,6 +845,19 @@
 		</div>
 	</div>
 
+	{#if versions.length > 0}
+		<div class="version-carousel" aria-label="Versions">
+			<div class="version-tabs">
+				{#each versions as item}
+					<a class={`version-tab ${item.id === versionId ? 'active' : ''}`} href={versionHref(item.id)} aria-current={item.id === versionId ? 'page' : undefined}>
+						<span class="version-tab-label">{item.versionLabel}</span>
+						<span class="version-tab-date">{new Date(item.createdAt).toLocaleDateString()}</span>
+					</a>
+				{/each}
+			</div>
+		</div>
+	{/if}
+
 	{#if pendingCount > 0}
 		<div class="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3">
 			<label class="inline-flex items-center gap-2 text-[13px] text-[var(--text-primary)]">
@@ -698,13 +870,15 @@
 		</div>
 	{/if}
 
-	{#if loading}
+	{#if loading || entriesLoading}
 		<div class="space-y-4">
 			<div class="h-52 animate-pulse rounded-[12px] border border-[var(--border)] bg-[var(--bg-surface)]"></div>
 			<div class="h-52 animate-pulse rounded-[12px] border border-[var(--border)] bg-[var(--bg-surface)]"></div>
 		</div>
 	{:else if error}
 		<p class="text-[13px] text-[var(--danger)]">{error}</p>
+	{:else if entriesError}
+		<p class="text-[13px] text-[var(--danger)]">{entriesError}</p>
 	{:else if groupedEntries.length === 0}
 		<EmptyState title={showOnlyChanged ? 'No changed config entries' : 'No config entries yet'} description={showOnlyChanged ? 'Change values first, then enable this filter to review them before saving.' : 'Create the first key for this version or let the SDK register missing keys automatically.'}>
 			{#snippet icon()}
@@ -818,6 +992,35 @@
 																	<Button variant="ghost" size="sm" onclick={cancelInlineEdit}>✕</Button>
 																</div>
 															</div>
+														{:else if isArrayValueType(entry.valueType)}
+															<div class="array-editor array-editor-inline">
+																<div class="space-y-2">
+																	{#each inlineArrayItems as item, index}
+																		<div class="array-row">
+																			<input
+																				class="array-input mono"
+																				type="text"
+																				value={item}
+																				placeholder={`Item ${index + 1}`}
+																				oninput={(e) => updateInlineArrayItem(index, e.currentTarget.value)}
+																				onkeydown={(e) => {
+																					if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') saveInline(entry);
+																					if (e.key === 'Escape') cancelInlineEdit();
+																				}}
+																			/>
+																			<Button variant="ghost" size="sm" className="array-icon-button" onclick={() => removeInlineArrayItem(index)}>−</Button>
+																		</div>
+																	{/each}
+																	{#if inlineArrayItems.length === 0}
+																		<div class="array-empty">Empty array</div>
+																	{/if}
+																</div>
+																<div class="flex flex-wrap items-center gap-2">
+																	<Button variant="secondary" size="sm" onclick={addInlineArrayItem}>Add row</Button>
+																	<Button variant="secondary" size="sm" onclick={() => saveInline(entry)}>✓</Button>
+																	<Button variant="ghost" size="sm" onclick={cancelInlineEdit}>✕</Button>
+																</div>
+															</div>
 														{:else}
 															<div class="flex items-center gap-2">
 																<input
@@ -859,6 +1062,26 @@
 																	<span class="bool-dot"></span>
 																	{getEntryValue(entry) === 'true' ? 'true' : 'false'}
 																</span>
+															</button>
+														{:else if isArrayValueType(entry.valueType)}
+															<button
+																class="block max-w-[420px] text-left disabled:cursor-default"
+																type="button"
+																disabled={!canInlineEdit(entry)}
+																onclick={() => startInlineEdit(entry)}
+															>
+																{#if arrayItemsForDisplay(getEntryValue(entry)).length > 0}
+																	<span class="array-preview">
+																		{#each arrayItemsForDisplay(getEntryValue(entry)).slice(0, 3) as item}
+																			<span class="array-chip mono">{item}</span>
+																		{/each}
+																		{#if arrayItemsForDisplay(getEntryValue(entry)).length > 3}
+																			<span class="array-more">+{arrayItemsForDisplay(getEntryValue(entry)).length - 3}</span>
+																		{/if}
+																	</span>
+																{:else}
+																	<span class="mono text-[13px] text-[var(--text-tertiary)]">[]</span>
+																{/if}
 															</button>
 														{:else}
 															<button
@@ -1022,7 +1245,31 @@
 		{:else if formValueType === CONFIG_VALUE_TYPE.Json}
 			<Textarea label="Value" placeholder={`{"key":"value"}`} bind:value={formRawValue} className="mono" />
 		{:else if formValueType === CONFIG_VALUE_TYPE.Array}
-			<Textarea label="Value" placeholder={`["first","second"]`} bind:value={formRawValue} className="mono" />
+			<div class="space-y-1.5">
+				<span class="block text-[13px] text-[var(--text-secondary)]">Value</span>
+				<div class="array-editor">
+					<div class="space-y-2">
+						{#each formArrayItems as item, index}
+							<div class="array-row">
+								<input
+									class="array-input mono"
+									type="text"
+									value={item}
+									placeholder={`Item ${index + 1}`}
+									oninput={(e) => updateFormArrayItem(index, e.currentTarget.value)}
+								/>
+								<Button variant="ghost" size="sm" className="array-icon-button" onclick={() => removeFormArrayItem(index)}>−</Button>
+							</div>
+						{/each}
+						{#if formArrayItems.length === 0}
+							<div class="array-empty">Empty array</div>
+						{/if}
+					</div>
+					<div class="flex justify-start">
+						<Button variant="secondary" size="sm" onclick={addFormArrayItem}>Add row</Button>
+					</div>
+				</div>
+			</div>
 		{:else if formValueType === CONFIG_VALUE_TYPE.Enum}
 			<div class="space-y-5">
 				{#if enumValues().length > 0}
@@ -1079,6 +1326,67 @@
 </div>
 
 <style>
+	.version-carousel {
+		overflow-x: auto;
+		border-bottom: 1px solid var(--border);
+		scrollbar-width: thin;
+	}
+
+	.version-tabs {
+		display: inline-flex;
+		min-width: 100%;
+		gap: 4px;
+		padding: 0 2px;
+	}
+
+	.version-tab {
+		display: inline-flex;
+		min-width: 148px;
+		max-width: 220px;
+		flex: 0 0 auto;
+		flex-direction: column;
+		justify-content: center;
+		gap: 2px;
+		border: 1px solid transparent;
+		border-bottom: 0;
+		border-radius: 8px 8px 0 0;
+		padding: 10px 14px 11px;
+		color: var(--text-secondary);
+		transition:
+			background-color 150ms ease,
+			border-color 150ms ease,
+			color 150ms ease;
+	}
+
+	.version-tab:hover {
+		background: var(--bg-subtle);
+		color: var(--text-primary);
+	}
+
+	.version-tab.active {
+		border-color: var(--border);
+		background: var(--bg-surface);
+		color: var(--accent-text);
+		box-shadow: inset 0 2px 0 var(--accent);
+	}
+
+	.version-tab-label,
+	.version-tab-date {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.version-tab-label {
+		font-size: 14px;
+		font-weight: 600;
+	}
+
+	.version-tab-date {
+		font-size: 11px;
+		color: var(--text-tertiary);
+	}
+
 	.bool-pill {
 		display: inline-flex;
 		align-items: center;
@@ -1161,5 +1469,79 @@
 	.toggle-label {
 		font-family: 'JetBrains Mono', monospace;
 		font-size: 12px;
+	}
+
+	.array-editor {
+		display: grid;
+		gap: 10px;
+		width: min(520px, 100%);
+	}
+
+	.array-editor-inline {
+		width: min(460px, 70vw);
+	}
+
+	.array-row {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 32px;
+		gap: 8px;
+		align-items: center;
+	}
+
+	.array-input {
+		height: 36px;
+		width: 100%;
+		border-radius: 8px;
+		border: 1px solid var(--accent);
+		background: var(--bg-surface);
+		padding: 0 10px;
+		font-size: 13px;
+		color: var(--text-primary);
+		outline: none;
+	}
+
+	.array-input::placeholder {
+		color: var(--text-tertiary);
+	}
+
+	.array-icon-button {
+		width: 32px;
+		padding-left: 0;
+		padding-right: 0;
+		font-size: 18px;
+	}
+
+	.array-empty {
+		border: 1px dashed var(--border);
+		border-radius: 8px;
+		background: var(--bg-subtle);
+		padding: 9px 10px;
+		font-size: 13px;
+		color: var(--text-tertiary);
+	}
+
+	.array-preview {
+		display: flex;
+		max-width: 420px;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+
+	.array-chip,
+	.array-more {
+		max-width: 160px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		border-radius: 999px;
+		border: 1px solid var(--border);
+		background: var(--bg-subtle);
+		padding: 2px 8px;
+		font-size: 12px;
+		color: var(--text-primary);
+	}
+
+	.array-more {
+		color: var(--text-secondary);
 	}
 </style>

@@ -8,6 +8,7 @@ using Konfigo.Client.Models;
 using Konfigo.Client.Options;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
+using ValueType = Konfigo.Client.Grpc.ValueType;
 
 namespace Konfigo.Client.UnitTests.Configuration;
 
@@ -174,5 +175,5 @@ public class RealtimeConfigProviderTests
         => new(VersionId.Empty, entries ?? [], NullLogger<RealtimeConfigProvider>.Instance);
 
     private static ConfigEntry GenerateConfigEntry()
-        => AutoFaker.Generate<ConfigEntry>() with { Generation = 2 };
+        => AutoFaker.Generate<ConfigEntry>() with { Generation = 2, Type = ValueType.String };
 }

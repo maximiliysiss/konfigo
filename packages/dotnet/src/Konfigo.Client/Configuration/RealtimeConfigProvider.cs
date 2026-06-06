@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
+using System.Text.Json;
 using Konfigo.Client.Entities;
 using Konfigo.Client.Extensions;
 using Konfigo.Client.Infrastructure.Extensions;
@@ -8,6 +10,7 @@ using Konfigo.Client.Models;
 using Konfigo.Client.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using ValueType = Konfigo.Client.Grpc.ValueType;
 
 namespace Konfigo.Client.Configuration;
 
@@ -47,14 +50,14 @@ internal sealed class RealtimeConfigProvider : ConfigurationProvider
     {
         var isUpdated = false;
 
-        foreach (var (key, value, newGeneration, ts) in values)
+        foreach (var (key, value, type, newGeneration, ts) in values)
         {
             if (_generations.TryGetValue(key, out var current) && current >= newGeneration)
-            {
                 continue;
-            }
 
-            Data[key] = value;
+            foreach (var (k, v) in Unwind(key, type, value))
+                Data[k] = v;
+
             _generations[key] = newGeneration;
 
             _timestamp = DateTimeOffsets.Max(_timestamp, ts);
@@ -65,6 +68,14 @@ internal sealed class RealtimeConfigProvider : ConfigurationProvider
         Data[TimestampKey] = _timestamp.ToString(CultureInfo.InvariantCulture);
 
         return isUpdated;
+
+        IEnumerable<(string key, string? value)> Unwind(string key, ValueType type, string? value)
+        {
+            if (type is not ValueType.Json && type is not ValueType.Array || string.IsNullOrEmpty(value))
+                return [(key, value)];
+
+            return JsonDocument.Parse(value).AsKeyValuePairs(key).DefaultIfEmpty((key, string.Empty));
+        }
     }
 
     public void Set(IEnumerable<ConfigEntry> values)

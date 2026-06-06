@@ -30,6 +30,11 @@
 	const currentUser = $derived(data.user);
 	const showShell = $derived($page.url.pathname !== '/login' && currentUser !== null);
 	const currentPath = $derived($page.url.pathname);
+	const pageTransitionKey = $derived.by(() => {
+		const match = currentPath.match(/^\/services\/([^/]+)\/versions\/[^/]+$/);
+		if (match) return `/services/${match[1]}/versions`;
+		return currentPath;
+	});
 	const userCanAll = $derived(canAll(currentUser));
 	const currentUserLabel = $derived(currentUser?.email ?? currentUser?.name ?? currentUser?.id ?? '');
 	const signOutHref = $derived(buildBackendUrl('/auth/logout?returnUrl=/login'));
@@ -128,7 +133,7 @@
 
 		<div class="app-main">
 			<main class="app-content">
-				{#key currentPath}
+				{#key pageTransitionKey}
 					<div class="page-fade" transition:fade={{ duration: 150 }}>
 						{@render children()}
 					</div>
