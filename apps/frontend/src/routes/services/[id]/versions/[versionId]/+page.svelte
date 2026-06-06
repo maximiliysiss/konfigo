@@ -7,9 +7,11 @@
 	import { apiRequest, buildBackendUrl, CONFIG_VALUE_TYPE } from '$lib/api';
 	import type {
 		ApplicationServiceContract,
+		AuditLogContract,
 		ConfigEntryContract,
 		ConfigValueType,
-		ConfigVersionContract
+		ConfigVersionContract,
+		PageResponse
 	} from '$lib/api';
 	import { canAll, canChange, user } from '$lib/stores/auth';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -36,6 +38,17 @@
 	type VersionDetail = ConfigVersionContract;
 
 	type ServiceDetail = ApplicationServiceContract;
+	type MainTabKey = 'info' | 'versions' | 'audit';
+	type AuditEntry = AuditLogContract;
+	type AuditDetail = { label: string; value: string };
+	type AuditSummary = {
+		type: string;
+		title: string;
+		subtitle: string;
+		badge: 'default' | 'success' | 'warning' | 'danger' | 'accent';
+		details: AuditDetail[];
+		unknown: boolean;
+	};
 
 	type Toast = { id: number; message: string };
 	type ValueTypeOption = { label: string; value: ConfigValueType };
@@ -55,11 +68,19 @@
 	let version = $state<VersionDetail | null>(null);
 	let versions = $state<VersionDetail[]>([]);
 	let entries = $state<ConfigEntry[]>([]);
+	let mainTab = $state<MainTabKey>('versions');
 	let loading = $state(true);
 	let entriesLoading = $state(false);
+	let auditLoading = $state(false);
 	let error = $state('');
 	let entriesError = $state('');
 	let actionError = $state('');
+	let audit = $state<AuditEntry[]>([]);
+	let auditPage = $state(1);
+	let auditPageSize = 10;
+	let auditPageTokens = $state<string[]>(['']);
+	let auditNextPageToken = $state('');
+	let expandedRows = $state<Record<string, boolean>>({});
 
 	let showPanel = $state(false);
 	let panelMode = $state<'create' | 'edit'>('create');
@@ -80,6 +101,14 @@
 	let pendingValues = $state<Record<string, string>>({});
 	let showOnlyChanged = $state(false);
 	let batchSaving = $state(false);
+
+	let showEdit = $state(false);
+	let editName = $state('');
+	let editDescription = $state('');
+	let editRepositoryUrl = $state('');
+	let editGitLabProjectId = $state('');
+	let editContactEmail = $state('');
+	let savingService = $state(false);
 
 	let confirmDeleteOpen = $state(false);
 	let deleting = $state(false);
@@ -180,6 +209,22 @@
 
 	function versionHref(nextVersionId: string): string {
 		return `/services/${serviceId}/versions/${nextVersionId}`;
+	}
+
+	function serviceTabHref(tab: MainTabKey): string {
+		if (tab === 'versions') return versionHref(versionId);
+		return `/services/${serviceId}#${tab}`;
+	}
+
+	function replaceVisibleUrl(url: string) {
+		if (!browser || window.location.pathname + window.location.hash === url) return;
+		window.history.pushState(null, '', url);
+	}
+
+	function setMainTab(nextTab: MainTabKey) {
+		mainTab = nextTab;
+		replaceVisibleUrl(serviceTabHref(nextTab));
+		if (nextTab === 'audit' && audit.length === 0) void loadAudit(auditPage);
 	}
 
 	function collapseStorageKey(groupName: string): string {
@@ -495,6 +540,189 @@
 		}, 2600);
 	}
 
+	async function copyServiceId() {
+		try {
+			await navigator.clipboard.writeText(service?.id ?? serviceId);
+			pushToast('Service ID copied');
+		} catch {
+			pushToast('Failed to copy service ID');
+		}
+	}
+
+	function prettyDate(value?: string | null): string {
+		if (!value) return '-';
+		const parsed = new Date(value);
+		return Number.isNaN(parsed.valueOf()) ? '-' : parsed.toLocaleString();
+	}
+
+	async function saveInfo() {
+		if (!service) return;
+		actionError = '';
+		savingService = true;
+		try {
+			await apiRequest<ServiceDetail>(`/services/${service.id}`, {
+				method: 'PUT',
+				body: JSON.stringify({
+					name: editName,
+					description: editDescription,
+					repositoryUrl: editRepositoryUrl,
+					gitLabProjectId: editGitLabProjectId,
+					contactEmail: editContactEmail
+				})
+			});
+			showEdit = false;
+			await loadServiceDetails();
+		} catch (e) {
+			actionError = e instanceof Error ? e.message : 'Failed to save service';
+		} finally {
+			savingService = false;
+		}
+	}
+
+	async function loadServiceDetails() {
+		service = await apiRequest<ServiceDetail>(`/services/${serviceId}`);
+		editName = service.name;
+		editDescription = service.description ?? '';
+		editRepositoryUrl = service.repositoryUrl ?? '';
+		editGitLabProjectId = service.gitLabProjectId ?? '';
+		editContactEmail = service.contactEmail ?? '';
+	}
+
+	async function loadAudit(pageNumber = 1) {
+		auditLoading = true;
+		try {
+			if (pageNumber > auditPage && auditNextPageToken) {
+				auditPageTokens = [...auditPageTokens.slice(0, auditPage), auditNextPageToken];
+			}
+			auditPage = pageNumber;
+			const payload = await apiRequest<PageResponse<AuditEntry>>(`/audit/${serviceId}/search`, {
+				method: 'POST',
+				body: JSON.stringify({
+					pageSize: auditPageSize,
+					pageToken: auditPageTokens[auditPage - 1] || null
+				})
+			});
+			audit = payload.entities;
+			auditNextPageToken = payload.nextPageToken ?? '';
+		} catch (e) {
+			actionError = e instanceof Error ? e.message : 'Failed to load audit log';
+		} finally {
+			auditLoading = false;
+		}
+	}
+
+	function toggleRow(index: number) {
+		const key = `${auditPage}-${index}`;
+		expandedRows = { ...expandedRows, [key]: !expandedRows[key] };
+	}
+
+	function stringifyJson(value: unknown): string {
+		if (value === null || value === undefined) return '-';
+		try {
+			return JSON.stringify(value, null, 2);
+		} catch {
+			return String(value);
+		}
+	}
+
+	function auditType(entry: AuditEntry['entry']): string {
+		const rawType = entry?.$type ?? entry?.type;
+		if (typeof rawType === 'string') return rawType;
+		if (typeof rawType !== 'number') return 'Unknown';
+
+		const types: Record<number, string> = {
+			0: 'ServiceCreated',
+			1: 'ServiceUpdated',
+			2: 'ServiceMemberAdded',
+			3: 'ServiceMemberRemoved',
+			4: 'ServiceDeleted',
+			5: 'VersionCreated',
+			6: 'VersionUpdated',
+			7: 'EntryCreated',
+			8: 'EntryUpdated',
+			9: 'EntryDeleted',
+			10: 'EntrySet'
+		};
+		return types[rawType] ?? 'Unknown';
+	}
+
+	function auditActionLabel(type: string): string {
+		const labels: Record<string, string> = {
+			ServiceCreated: 'Service created',
+			ServiceUpdated: 'Service updated',
+			ServiceMemberAdded: 'Member added',
+			ServiceMemberRemoved: 'Member removed',
+			ServiceDeleted: 'Service deleted',
+			VersionCreated: 'Version created',
+			VersionUpdated: 'Version updated',
+			EntryCreated: 'Config entry created',
+			EntryUpdated: 'Config entry updated',
+			EntryDeleted: 'Config entry deleted',
+			EntrySet: 'Config value changed'
+		};
+		return labels[type] ?? type.replace(/([a-z])([A-Z])/g, '$1 $2');
+	}
+
+	function auditBadge(type: string): AuditSummary['badge'] {
+		if (type.endsWith('Created') || type === 'ServiceMemberAdded') return 'success';
+		if (type.endsWith('Updated') || type === 'EntrySet') return 'warning';
+		if (type.endsWith('Deleted') || type === 'ServiceMemberRemoved') return 'danger';
+		return 'accent';
+	}
+
+	function humanLabel(key: string): string {
+		const labels: Record<string, string> = {
+			id: 'ID',
+			name: 'Name',
+			description: 'Description',
+			repositoryUrl: 'Repository URL',
+			gitLabProjectId: 'GitLab Project ID',
+			contactEmail: 'Contact email',
+			userId: 'User ID',
+			versionLabel: 'Version',
+			rawValue: 'Value',
+			enumDefinition: 'Enum values',
+			groupName: 'Group',
+			groupDescription: 'Group description',
+			value: 'Value'
+		};
+		return labels[key] ?? key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (value) => value.toUpperCase());
+	}
+
+	function formatAuditValue(value: unknown): string {
+		if (value === null || value === undefined || value === '') return 'Not set';
+		if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return String(value);
+		return stringifyJson(value);
+	}
+
+	function auditDetails(entry: AuditEntry['entry']): AuditDetail[] {
+		const hidden = new Set(['$type', 'type']);
+		return Object.entries(entry ?? {})
+			.filter(([key]) => !hidden.has(key))
+			.map(([key, value]) => ({ label: humanLabel(key), value: formatAuditValue(value) }));
+	}
+
+	function auditSubject(type: string, entry: AuditEntry['entry']): string {
+		if (type.startsWith('Service')) return formatAuditValue(entry?.name);
+		if (type.startsWith('Version')) return formatAuditValue(entry?.versionLabel ?? entry?.id);
+		if (type.startsWith('Entry')) return `Entry ${formatAuditValue(entry?.id)}`;
+		return 'Audit event';
+	}
+
+	function auditSummary(row: AuditEntry): AuditSummary {
+		const type = auditType(row.entry);
+		const subject = auditSubject(type, row.entry);
+		const details = auditDetails(row.entry);
+		return {
+			type,
+			title: auditActionLabel(type),
+			subtitle: subject === 'Not set' ? 'No target details' : subject,
+			badge: auditBadge(type),
+			details,
+			unknown: type === 'Unknown'
+		};
+	}
+
 	function applyEntries(nextEntries: ConfigEntry[]) {
 		entries = nextEntries.map((x) => ({ ...x, updatedAt: null }));
 		pendingValues = {};
@@ -508,13 +736,12 @@
 		error = '';
 		entriesError = '';
 		try {
-			const [serviceData, versionData, versionList] = await Promise.all([
-				apiRequest<ServiceDetail>(`/services/${serviceId}`),
+			const [versionData, versionList] = await Promise.all([
 				apiRequest<VersionDetail>(`/configversions/${serviceId}/${versionId}`),
 				apiRequest<VersionDetail[]>(`/configversions/${serviceId}`)
 			]);
 			const entryData = await apiRequest<ConfigEntry[]>(`/configentries/${serviceId}/${versionId}`);
-			service = serviceData;
+			await loadServiceDetails();
 			version = versionData;
 			versions = sortVersions(versionList);
 			applyEntries(entryData);
@@ -818,57 +1045,142 @@
 </script>
 
 <section class={`space-y-6 ${pendingCount > 0 ? 'pb-28' : ''}`}>
-	<nav class="text-[13px] text-[var(--text-secondary)]">
-		<a class="hover:text-[var(--text-primary)]" href="/services">Services</a>
-		<span class="mx-2">/</span>
-		<a class="hover:text-[var(--text-primary)]" href={`/services/${serviceId}`}>{service?.name ?? '...'}</a>
-		<span class="mx-2">/</span>
-		<span class="text-[var(--text-primary)]">{version?.versionLabel ?? 'Version'}</span>
-	</nav>
-
 	<div class="page-header">
 		<div>
-			<div class="flex items-center gap-3">
-				<h1 class="page-title">{version?.versionLabel ?? 'Config entries'}</h1>
-				<span class={`status-dot ${subscriptionPulse ? 'pulse' : ''}`}></span>
+			<p class="section-label">Service</p>
+			<h1 class="page-title">{service?.name ?? 'Service'}</h1>
+			<div class="service-id-pill mt-2">
+				<span class="font-mono" title={service?.id ?? serviceId}>{service?.id ?? serviceId}</span>
+				<button
+					class="copy-id-button"
+					type="button"
+					aria-label="Copy service ID"
+					title="Copy service ID"
+					onclick={copyServiceId}
+				>
+					<svg viewBox="0 0 16 16" class="h-3.5 w-3.5" fill="none" aria-hidden="true">
+						<rect x="6" y="5" width="7" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4" />
+						<path d="M4 10.5H3.5A1.5 1.5 0 0 1 2 9V3.5A1.5 1.5 0 0 1 3.5 2H9a1.5 1.5 0 0 1 1.5 1.5V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+					</svg>
+				</button>
 			</div>
-			<p class="page-subtitle">{version?.description ?? 'Versioned configuration entries for this service.'}</p>
+			<p class="page-subtitle">{service?.description ?? 'No service description provided.'}</p>
 		</div>
-		<div class="flex items-center gap-3">
-			<div class="rounded-[10px] border border-[var(--border)] bg-[var(--bg-surface)] px-3 py-2 text-[13px] text-[var(--text-secondary)]">
-				<div class="text-[12px] text-[var(--text-tertiary)]">Version</div>
-				<div class="mt-1 font-medium text-[var(--text-primary)]">{version?.versionLabel ?? 'Loading'}</div>
-			</div>
-			{#if userCanAll}
-				<Button size="lg" onclick={() => openCreatePanel()}>Add entry</Button>
-			{/if}
+		<div class="flex flex-wrap gap-2">
+			<span class="metric-pill">{versions.length} versions</span>
 		</div>
 	</div>
 
-	{#if versions.length > 0}
-		<div class="version-carousel" aria-label="Versions">
-			<div class="version-tabs">
-				{#each versions as item}
-					<a class={`version-tab ${item.id === versionId ? 'active' : ''}`} href={versionHref(item.id)} aria-current={item.id === versionId ? 'page' : undefined}>
-						<span class="version-tab-label">{item.versionLabel}</span>
-						<span class="version-tab-date">{new Date(item.createdAt).toLocaleDateString()}</span>
-					</a>
-				{/each}
-			</div>
-		</div>
-	{/if}
+	<div class="flex flex-wrap gap-2">
+		<button class={`tab-pill ${mainTab === 'info' ? 'active' : ''}`} type="button" onclick={() => setMainTab('info')}>Info</button>
+		<button class={`tab-pill ${mainTab === 'versions' ? 'active' : ''}`} type="button" onclick={() => setMainTab('versions')}>Versions</button>
+		<button class={`tab-pill ${mainTab === 'audit' ? 'active' : ''}`} type="button" onclick={() => setMainTab('audit')}>Audit</button>
+	</div>
 
-	{#if pendingCount > 0}
-		<div class="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3">
-			<label class="inline-flex items-center gap-2 text-[13px] text-[var(--text-primary)]">
-				<input class="h-4 w-4 accent-[var(--accent)]" type="checkbox" bind:checked={showOnlyChanged} />
-				<span>Show changes</span>
-			</label>
-			<div class="text-[13px] text-[var(--text-secondary)]">
-				{pendingCount} unsaved {pendingCount === 1 ? 'change' : 'changes'}
+	<div class="pt-2">
+		{#if mainTab === 'info'}
+			<Card>
+				{#snippet header()}
+					<div class="flex items-center justify-between gap-3">
+						<div>
+							<p class="section-label">Overview</p>
+							<h2 class="mt-2 text-[20px] font-semibold">Service information</h2>
+						</div>
+						{#if userCanAll}
+							<Button variant="secondary" onclick={() => (showEdit = !showEdit)}>{showEdit ? 'Cancel' : 'Edit'}</Button>
+						{/if}
+					</div>
+				{/snippet}
+
+				{#if showEdit && userCanAll}
+					<div class="max-w-[640px] space-y-5">
+						<Input label="Name" bind:value={editName} />
+						<Textarea label="Description" bind:value={editDescription} />
+						<Input label="Repository URL" bind:value={editRepositoryUrl} />
+						<Input label="GitLab Project ID" bind:value={editGitLabProjectId} />
+						<Input label="Contact Email" bind:value={editContactEmail} />
+						<div class="flex justify-end">
+							<Button loading={savingService} onclick={saveInfo}>Save changes</Button>
+						</div>
+					</div>
+				{:else if service}
+					<div class="grid gap-5 md:grid-cols-2">
+						<div class="space-y-3">
+							<p class="text-[13px] text-[var(--text-secondary)]">Name</p>
+							<p class="text-[16px]">{service.name}</p>
+						</div>
+						<div class="space-y-3">
+							<p class="text-[13px] text-[var(--text-secondary)]">Repository</p>
+							{#if service.repositoryUrl}
+								<a href={service.repositoryUrl} target="_blank" rel="noreferrer" class="text-[14px] text-[var(--accent-text)] hover:underline">{service.repositoryUrl}</a>
+							{:else}
+								<p class="text-[14px] text-[var(--text-secondary)]">Not linked</p>
+							{/if}
+						</div>
+						<div class="space-y-3 md:col-span-2">
+							<p class="text-[13px] text-[var(--text-secondary)]">Description</p>
+							<p class="text-[14px] text-[var(--text-primary)]">{service.description ?? 'No description available.'}</p>
+						</div>
+						<div class="space-y-3">
+							<p class="text-[13px] text-[var(--text-secondary)]">GitLab Project ID</p>
+							<p class="text-[14px] text-[var(--text-primary)]">{service.gitLabProjectId ?? '-'}</p>
+						</div>
+						<div class="space-y-3">
+							<p class="text-[13px] text-[var(--text-secondary)]">Contact Email</p>
+							<p class="text-[14px] text-[var(--text-primary)]">{service.contactEmail ?? '-'}</p>
+						</div>
+						<div class="space-y-3">
+							<p class="text-[13px] text-[var(--text-secondary)]">Created</p>
+							<p class="text-[14px] text-[var(--text-primary)]">{prettyDate(service.createdAt)}</p>
+						</div>
+						<div class="space-y-3">
+							<p class="text-[13px] text-[var(--text-secondary)]">Updated</p>
+							<p class="text-[14px] text-[var(--text-primary)]">{prettyDate(service.updatedAt)}</p>
+						</div>
+					</div>
+				{/if}
+			</Card>
+		{:else if mainTab === 'versions'}
+			<div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+				<div>
+					<p class="section-label">Config</p>
+					<div class="mt-2 flex items-center gap-3">
+						<h2 class="text-[20px] font-semibold">Versions</h2>
+						<span class={`status-dot ${subscriptionPulse ? 'pulse' : ''}`}></span>
+					</div>
+					<p class="mt-1 text-[13px] text-[var(--text-secondary)]">
+						{version?.versionLabel ?? 'Version'}{version?.description ? ` · ${version.description}` : ''}
+					</p>
+				</div>
+				{#if userCanAll}
+					<Button size="lg" onclick={() => openCreatePanel()}>Add entry</Button>
+				{/if}
 			</div>
-		</div>
-	{/if}
+
+			{#if versions.length > 0}
+				<div class="version-carousel" aria-label="Versions">
+					<div class="version-tabs">
+						{#each versions as item}
+							<a class={`version-tab ${item.id === versionId ? 'active' : ''}`} href={versionHref(item.id)} aria-current={item.id === versionId ? 'page' : undefined}>
+								<span class="version-tab-label">{item.versionLabel}</span>
+								<span class="version-tab-date">{new Date(item.createdAt).toLocaleDateString()}</span>
+							</a>
+						{/each}
+					</div>
+				</div>
+			{/if}
+
+			{#if pendingCount > 0}
+				<div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3">
+					<label class="inline-flex items-center gap-2 text-[13px] text-[var(--text-primary)]">
+						<input class="h-4 w-4 accent-[var(--accent)]" type="checkbox" bind:checked={showOnlyChanged} />
+						<span>Show changes</span>
+					</label>
+					<div class="text-[13px] text-[var(--text-secondary)]">
+						{pendingCount} unsaved {pendingCount === 1 ? 'change' : 'changes'}
+					</div>
+				</div>
+			{/if}
 
 	{#if loading || entriesLoading}
 		<div class="space-y-4">
@@ -1115,15 +1427,101 @@
 					{/if}
 				</Card>
 			{/each}
+			</div>
+		{/if}
+			{:else}
+				<Card>
+				{#snippet header()}
+					<div>
+						<p class="section-label">History</p>
+						<h2 class="mt-2 text-[20px] font-semibold">Audit log</h2>
+					</div>
+				{/snippet}
+
+				{#if auditLoading}
+					<div class="space-y-4">
+						<div class="h-24 animate-pulse rounded-[12px] border border-[var(--border)] bg-[var(--bg-surface)]"></div>
+						<div class="h-24 animate-pulse rounded-[12px] border border-[var(--border)] bg-[var(--bg-surface)]"></div>
+					</div>
+				{:else if audit.length === 0}
+					<EmptyState title="No audit events" description="Changes to services, versions, and entries will appear here." />
+				{:else}
+					<div class="timeline">
+						{#each audit as row, i}
+							{@const rowKey = `${auditPage}-${i}`}
+							{@const summary = auditSummary(row)}
+							<div class="timeline-item">
+								<button class="w-full rounded-[12px] border border-[var(--border)] bg-[var(--bg-elevated)] p-4 text-left" type="button" onclick={() => toggleRow(i)}>
+									<div class="flex flex-wrap items-start justify-between gap-3">
+										<div class="min-w-0 space-y-2">
+											<Badge variant={summary.badge}>{summary.type}</Badge>
+											<div>
+												<p class="text-[15px] font-semibold text-[var(--text-primary)]">{summary.title}</p>
+												<p class="mt-1 break-words text-[13px] text-[var(--text-secondary)]">{summary.subtitle}</p>
+											</div>
+										</div>
+										<div class="text-right">
+											<p class="text-[12px] text-[var(--text-tertiary)]">{prettyDate(row.createdAt)}</p>
+											<p class="mt-1 text-[12px] text-[var(--text-secondary)]">{row.userId ? `User ${row.userId}` : 'System action'}</p>
+										</div>
+									</div>
+								</button>
+								{#if expandedRows[rowKey]}
+									<div class="mt-3 rounded-[12px] border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
+										<div class="grid gap-3 md:grid-cols-2">
+											<div>
+												<p class="text-[12px] text-[var(--text-secondary)]">Changed by</p>
+												<p class="mt-1 break-words text-[13px] text-[var(--text-primary)]">{row.userId ?? 'System'}</p>
+											</div>
+											<div>
+												<p class="text-[12px] text-[var(--text-secondary)]">Created</p>
+												<p class="mt-1 text-[13px] text-[var(--text-primary)]">{prettyDate(row.createdAt)}</p>
+											</div>
+										</div>
+
+										{#if summary.details.length > 0}
+											<div class="mt-4 grid gap-3 md:grid-cols-2">
+												{#each summary.details as detail}
+													<div class="rounded-[8px] border border-[var(--border)] bg-[var(--bg-subtle)] p-3">
+														<p class="text-[12px] text-[var(--text-secondary)]">{detail.label}</p>
+														<p class="mt-1 whitespace-pre-wrap break-words font-mono text-[12px] text-[var(--text-primary)]">{detail.value}</p>
+													</div>
+												{/each}
+											</div>
+										{:else}
+											<p class="mt-4 text-[13px] text-[var(--text-secondary)]">No additional details.</p>
+										{/if}
+
+										{#if summary.unknown}
+											<div class="mt-4">
+												<p class="mb-2 text-[12px] text-[var(--text-secondary)]">Raw payload</p>
+												<pre class="code-block">{stringifyJson(row.entry)}</pre>
+											</div>
+										{/if}
+									</div>
+								{/if}
+							</div>
+						{/each}
+					</div>
+
+					<div class="mt-4 flex items-center justify-between gap-4">
+						<p class="text-[12px] text-[var(--text-secondary)]">Page {auditPage}</p>
+						<div class="flex gap-3">
+							<Button variant="secondary" size="sm" disabled={auditPage <= 1} onclick={() => loadAudit(auditPage - 1)}>Previous</Button>
+							<Button variant="secondary" size="sm" disabled={!auditNextPageToken} onclick={() => loadAudit(auditPage + 1)}>Next</Button>
+						</div>
+					</div>
+				{/if}
+			</Card>
+			{/if}
 		</div>
-	{/if}
 
-	{#if actionError}
-		<p class="text-[13px] text-[var(--danger)]">{actionError}</p>
-	{/if}
-</section>
+		{#if actionError}
+			<p class="text-[13px] text-[var(--danger)]">{actionError}</p>
+		{/if}
+	</section>
 
-{#if pendingCount > 0}
+{#if mainTab === 'versions' && pendingCount > 0}
 	<div class="fixed bottom-4 left-1/2 z-40 w-[min(760px,calc(100vw-32px))] -translate-x-1/2 rounded-[12px] border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3 shadow-[var(--shadow-md)]">
 		<div class="flex flex-wrap items-center justify-between gap-3">
 			<div class="min-w-0">
@@ -1326,6 +1724,39 @@
 </div>
 
 <style>
+	.service-id-pill {
+		display: inline-flex;
+		max-width: 100%;
+		align-items: center;
+		gap: 6px;
+		border: 1px solid var(--border);
+		border-radius: 7px;
+		background: var(--bg-subtle);
+		padding: 3px 4px 3px 8px;
+		color: var(--text-secondary);
+		font-size: 11px;
+		overflow-wrap: anywhere;
+	}
+
+	.copy-id-button {
+		display: inline-flex;
+		height: 22px;
+		width: 22px;
+		flex: 0 0 auto;
+		align-items: center;
+		justify-content: center;
+		border-radius: 5px;
+		color: var(--text-tertiary);
+		transition:
+			background-color 150ms ease,
+			color 150ms ease;
+	}
+
+	.copy-id-button:hover {
+		background: var(--bg-elevated);
+		color: var(--text-primary);
+	}
+
 	.version-carousel {
 		overflow-x: auto;
 		border-bottom: 1px solid var(--border);
