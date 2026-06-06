@@ -3,7 +3,7 @@
   "profiles": {
     "Konfigo [Local]": {
       "commandName": "Project",
-      "applicationUrl": "http://localhost:5000",
+      "applicationUrl": "http://localhost:8080",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Local"
       }

@@ -1,3 +1,5 @@
+using System.Security.Claims;
+
 namespace Konfigo.Authorization;
 
 public sealed class KonfigoAuthenticationOptions
@@ -5,6 +7,8 @@ public sealed class KonfigoAuthenticationOptions
     public const string SectionName = "Authentication";
 
     public AuthenticationProvider Provider { get; init; } = AuthenticationProvider.Saml;
+
+    public string RoleClaimType { get; init; } = ClaimTypes.Role;
 
     public SamlAuthenticationOptions Saml { get; init; } = new();
 
@@ -38,6 +42,8 @@ public sealed class OpenIdAuthenticationOptions
     public string ClientId { get; init; } = string.Empty;
 
     public string ClientSecret { get; init; } = string.Empty;
+
+    public bool RequireHttpsMetadata { get; init; } = true;
 
     public string ResponseType { get; init; } = "code";
 

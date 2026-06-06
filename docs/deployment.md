@@ -6,7 +6,7 @@
 
 - .NET 10 SDK
 - Node.js 22+
-- Docker (for PostgreSQL and Redis)
+- Docker (for PostgreSQL, Redis, and Dex)
 
 ### 1. Start infrastructure
 
@@ -15,11 +15,11 @@ cd apps/backend
 docker compose up -d
 ```
 
-This starts PostgreSQL 14 on `:5432` and Redis 7 on `:6379`.
+This starts PostgreSQL 14 on `:5432`, Redis 7 on `:6379`, and Dex on `http://localhost:5556/dex`.
 
 ### 2. Configure the backend
 
-Create `apps/backend/src/Konfigo/appsettings.Local.json`:
+`apps/backend/src/Konfigo/appsettings.Local.json` is configured for those local dependencies:
 
 ```json
 {
@@ -28,17 +28,32 @@ Create `apps/backend/src/Konfigo/appsettings.Local.json`:
     "Redis": "localhost:6379"
   },
   "Authentication": {
-    "Provider": "Jwt",
-    "Jwt": {
-      "Authority": "http://localhost:5000",
-      "Audience": "konfigo",
-      "RequireHttpsMetadata": false
+    "Provider": "OpenId",
+    "RoleClaimType": "groups",
+    "OpenId": {
+      "Authority": "http://localhost:5556/dex",
+      "ClientId": "konfigo",
+      "ClientSecret": "konfigo-local-secret",
+      "RequireHttpsMetadata": false,
+      "ResponseType": "code",
+      "Scopes": ["openid", "profile", "email", "groups"]
+    }
+  },
+  "Authorization": {
+    "Policies": {
+      "canAll": ["admin"],
+      "canChange": ["developer"]
     }
   }
 }
 ```
 
-For development without a real identity provider, use `Provider: "Jwt"` and issue tokens manually, or set up a local Keycloak/Auth0 instance.
+Local Dex users:
+
+| User | Password | Dex groups | Konfigo permissions |
+|------|----------|------------|---------------------|
+| `admin@konfigo.local` | `admin` | `admin`, `developer` | `canAll`, `canChange` |
+| `developer@konfigo.local` | `developer` | `developer` | `canChange` |
 
 ### 3. Run the backend
 
@@ -58,7 +73,7 @@ npm install
 npm run dev
 ```
 
-The dev server starts on `http://localhost:5173`.
+The dev server starts on `http://localhost:5173` and proxies API/auth calls to the backend.
 
 ## Docker (production)
 
@@ -106,144 +121,19 @@ docker run -p 3000:3000 \
   konfigo-frontend:0.0.1
 ```
 
-### Full stack with Docker Compose
+### Local dependencies with Docker Compose
 
-The repository includes `apps/backend/docker-compose.yml` for local PostgreSQL and Redis only.
-To build and run the backend, frontend, PostgreSQL, Redis, and a reverse proxy together, create a
-root-level `docker-compose.yaml` like this:
+The repository includes `apps/backend/docker-compose.yml` for external dependencies used by
+locally running backend/frontend processes:
 
-```yaml
-name: konfigo
-
-services:
-  postgres:
-    image: postgres:14
-    environment:
-      POSTGRES_DB: konfigo
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: pwd
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d konfigo"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-
-  redis:
-    image: redis:7.0.6-alpine
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-
-  backend:
-    build:
-      context: ./apps/backend
-      args:
-        KONFIGO_VERSION: 0.0.1
-    environment:
-      ASPNETCORE_URLS: http://+:8080
-      ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=konfigo;Username=postgres;Password=pwd;Persist Security Info=True;
-      ConnectionStrings__Redis: redis:6379
-      Authentication__Provider: OpenId
-      Authentication__OpenId__Authority: https://your-idp.example.com
-      Authentication__OpenId__ClientId: konfigo
-      Authentication__OpenId__ClientSecret: change-me
-      Authorization__Policies__canAll__0: admin
-      Authorization__Policies__canChange__0: developer
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  frontend:
-    build:
-      context: ./apps/frontend
-      args:
-        KONFIGO_VERSION: 0.0.1
-    environment:
-      NODE_ENV: production
-    depends_on:
-      - backend
-
-  proxy:
-    image: nginx:1.27-alpine
-    ports:
-      - "8080:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      - backend
-      - frontend
-
-volumes:
-  postgres-data:
-```
-
-Create `nginx.conf` next to that compose file:
-
-```nginx
-server {
-    listen 80;
-    http2 on;
-
-    location /api/ {
-        proxy_pass http://backend:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-Host $host;
-    }
-
-    location /auth/ {
-        proxy_pass http://backend:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-Host $host;
-    }
-
-    location /hubs/ {
-        proxy_pass http://backend:8080;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-Host $host;
-    }
-
-    location /konfigo.client.RealtimeConfigGrpcService/ {
-        grpc_pass grpc://backend:8080;
-    }
-
-    location / {
-        proxy_pass http://frontend:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-Host $host;
-    }
-}
-```
-
-Run it from the repository root:
+Run it from `apps/backend`:
 
 ```bash
-docker compose up --build -d
+docker compose up -d
 ```
 
-The web UI will be available at `http://localhost:8080`. REST API calls use
-`http://localhost:8080/api/*`, SignalR uses `http://localhost:8080/hubs/config`, and SDK gRPC
-clients can connect to `http://localhost:8080`.
-
-Replace the `Authentication__OpenId__*` values with your identity provider settings before using
-this outside a local smoke test.
+It starts PostgreSQL, Redis, and Dex only. The backend runs on the host at
+`http://localhost:8080`, and the frontend dev server runs on `http://localhost:5173`.
 
 ## Environment variables
 
@@ -257,11 +147,13 @@ All settings follow ASP.NET Core's double-underscore (`__`) convention for neste
 | `ConnectionStrings__Redis` | Redis connection string | `redis:6379` |
 | `ASPNETCORE_ENVIRONMENT` | Environment name | `Production`, `Testing` |
 | `Authentication__Provider` | Auth provider | `Saml`, `OpenId`, `Jwt` |
+| `Authentication__RoleClaimType` | Claim type used for roles | `role`, `groups` |
 | `Authentication__Saml__MetadataLocation` | SAML IdP metadata URL or file path | `https://idp.example.com/metadata` |
 | `Authentication__Saml__IdentityProviderEntityId` | SAML IdP entity ID | `https://idp.example.com` |
 | `Authentication__OpenId__Authority` | OIDC authority | `https://auth.example.com` |
 | `Authentication__OpenId__ClientId` | OIDC client ID | `konfigo` |
 | `Authentication__OpenId__ClientSecret` | OIDC client secret | — |
+| `Authentication__OpenId__RequireHttpsMetadata` | Require HTTPS OIDC metadata | `true` |
 | `Authentication__Jwt__Authority` | JWT authority | `https://auth.example.com` |
 | `Authentication__Jwt__Audience` | JWT audience | `konfigo` |
 | `Authorization__Policies__canAll__0` | Roles with full admin access | `admin` |
@@ -301,10 +193,12 @@ All settings follow ASP.NET Core's double-underscore (`__`) convention for neste
 {
   "Authentication": {
     "Provider": "OpenId",
+    "RoleClaimType": "role",
     "OpenId": {
       "Authority": "https://your-idp.example.com",
       "ClientId": "konfigo",
       "ClientSecret": "secret",
+      "RequireHttpsMetadata": true,
       "ResponseType": "code",
       "Scopes": ["openid", "profile", "email"]
     }
@@ -345,6 +239,14 @@ Role names come from the `role` claim in the identity token. Map them to Konfigo
 ```
 
 `canChange` automatically inherits all roles from `canAll`.
+
+For local Docker Compose, `apps/backend/docker-compose.yml` runs Dex as an OIDC provider and maps
+Dex `groups` to backend roles with `Authentication__RoleClaimType=groups`.
+
+| User | Password | Dex groups | Konfigo permissions |
+|------|----------|------------|---------------------|
+| `admin@konfigo.local` | `admin` | `admin`, `developer` | `canAll`, `canChange` |
+| `developer@konfigo.local` | `developer` | `developer` | `canChange` |
 
 ## Database migrations
 

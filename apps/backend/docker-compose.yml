@@ -6,10 +6,29 @@ services:
         ports:
             - "5432:5432"
         environment:
+            POSTGRES_DB: konfigo
             POSTGRES_PASSWORD: pwd
             POSTGRES_USER: postgres
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres -d konfigo"]
+            interval: 5s
+            timeout: 5s
+            retries: 20
 
     redis:
         image: redis:7.0.6-alpine
         ports:
             - "6379:6379"
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 5s
+            timeout: 5s
+            retries: 20
+
+    dex:
+        image: ghcr.io/dexidp/dex:v2.41.1
+        command: ["dex", "serve", "/etc/dex/config.yaml"]
+        ports:
+            - "5556:5556"
+        volumes:
+            - ./docker/dex/config.yaml:/etc/dex/config.yaml:ro

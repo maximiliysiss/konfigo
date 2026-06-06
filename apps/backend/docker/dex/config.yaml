@@ -1,0 +1,35 @@
+issuer: http://localhost:5556/dex
+
+storage:
+  type: memory
+
+web:
+  http: 0.0.0.0:5556
+
+oauth2:
+  skipApprovalScreen: true
+
+staticClients:
+  - id: konfigo
+    name: Konfigo
+    secret: konfigo-local-secret
+    redirectURIs:
+      - http://localhost:8080/signin-oidc
+      - http://localhost:5173/signin-oidc
+
+enablePasswordDB: true
+
+staticPasswords:
+  - email: admin@konfigo.local
+    hash: "$2a$10$o9AsLi97lTmCvVfqnG/sWujMbG12Vwabout6qyWWoP912eb1GbVJi"
+    username: admin
+    userID: local-admin
+    groups:
+      - admin
+      - developer
+  - email: developer@konfigo.local
+    hash: "$2a$10$0OooRjbzvJdWPlwwK03dIucxDCJ.9ABLe9AMJr/Z0D8eiWnEqitc2"
+    username: developer
+    userID: local-developer
+    groups:
+      - developer

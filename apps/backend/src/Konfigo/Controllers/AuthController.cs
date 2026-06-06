@@ -79,7 +79,11 @@ public sealed class AuthController : ControllerBase
             id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value,
             email = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("email")?.Value,
             name = User.FindFirst(ClaimTypes.Name)?.Value ?? User.FindFirst("displayName")?.Value,
-            roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToArray(),
+            roles = User.Identities
+                .SelectMany(identity => User.FindAll(identity.RoleClaimType))
+                .Select(c => c.Value)
+                .Distinct()
+                .ToArray(),
             permissions = _authorizationOptions.CurrentValue.GetPermissions(User)
         };
 

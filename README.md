@@ -58,20 +58,32 @@ number for Go module tags when publishing the SDK.
 ### Run with Docker Compose
 
 ```bash
-# 1. Start infrastructure (PostgreSQL + Redis)
+# Start PostgreSQL, Redis, and local Dex auth
 cd apps/backend
 docker compose up -d
-
-# 2. Run the backend
-dotnet run --project src/Konfigo
-
-# 3. Run the frontend (separate terminal)
-cd apps/frontend
-npm install && npm run dev
 ```
 
-The backend listens on `http://localhost:8080` (HTTP/gRPC multiplexed).  
-The frontend dev server starts on `http://localhost:5173`.
+Then run the backend and frontend locally:
+
+```bash
+dotnet run --project src/Konfigo
+
+cd ../frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`.
+
+Local users:
+
+| User | Password | Roles | Permissions |
+|------|----------|-------|-------------|
+| `admin@konfigo.local` | `admin` | `admin`, `developer` | `canAll`, `canChange` |
+| `developer@konfigo.local` | `developer` | `developer` | `canChange` |
+
+The backend listens on `http://localhost:8080`, Dex on `http://localhost:5556/dex`, and
+the frontend dev server proxies API/auth calls to the backend.
 
 ### Docker images (production)
 

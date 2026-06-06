@@ -19,7 +19,15 @@ export default defineConfig(({ mode }) => {
 				},
 				'/auth': {
 					target: apiProxyTarget,
-					changeOrigin: true
+					changeOrigin: false
+				},
+				'/signin-oidc': {
+					target: apiProxyTarget,
+					changeOrigin: false
+				},
+				'/signout-callback-oidc': {
+					target: apiProxyTarget,
+					changeOrigin: false
 				},
 				'/hubs': {
 					target: apiProxyTarget,
