@@ -25,6 +25,15 @@ internal sealed class ApplicationRepository(AppDbContext context) : IApplication
             query = query.Where(x => x.Name.Contains(request.Name));
         }
 
+        if (request.Labels is not [])
+        {
+            var labels = request.Labels
+                .Select(c => c.ToLower())
+                .ToArray();
+
+            query = query.Where(x => labels.Contains(x.Name.ToLower()));
+        }
+
         query = query
             .Where(x => x.Num < request.Cursor.Num)
             .OrderByDescending(x => x.Num)

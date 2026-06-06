@@ -45,9 +45,14 @@ public sealed class ServicesController : ControllerBase
     {
         var pageToken = contract.PageToken.AsPageToken(SearchServiceRequest.PageToken.Empty);
 
+        var labels = User.GetServices();
+        if (labels is [])
+            return PageResponse<ApplicationService>.Empty;
+
         var searchServiceRequest = SearchServiceRequest.Create(
             name: contract.Name,
             pageSize: contract.PageSize,
+            labels: labels,
             cursor: pageToken,
             asTracking: false);
 

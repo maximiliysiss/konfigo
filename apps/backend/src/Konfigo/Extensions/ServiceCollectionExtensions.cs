@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Konfigo.Application.Services.Notifications;
 using Konfigo.Authorization;
 using Konfigo.Notifications;
@@ -79,6 +80,19 @@ public static class ServiceCollectionExtensions
                     openIdOptions.TokenValidationParameters = new TokenValidationParameters
                     {
                         RoleClaimType = options.RoleClaimType,
+                    };
+
+                    openIdOptions.Events = new OpenIdConnectEvents
+                    {
+                        OnRedirectToIdentityProviderForSignOut = ctx =>
+                        {
+                            if (string.IsNullOrEmpty(ctx.ProtocolMessage.IssuerAddress))
+                            {
+                                ctx.Response.Redirect(ctx.Properties.RedirectUri ?? "/login");
+                                ctx.HandleResponse();
+                            }
+                            return Task.CompletedTask;
+                        }
                     };
                 });
 
