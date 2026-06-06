@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -66,7 +67,6 @@ public static class ServiceCollectionExtensions
                     openIdOptions.ClientSecret = options.OpenId.ClientSecret;
                     openIdOptions.RequireHttpsMetadata = options.OpenId.RequireHttpsMetadata;
                     openIdOptions.ResponseType = options.OpenId.ResponseType;
-                    openIdOptions.SaveTokens = true;
 
                     openIdOptions.Scope.Clear();
 

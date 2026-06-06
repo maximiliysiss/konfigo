@@ -75,6 +75,20 @@ export type AuditLogContract = {
 	updatedAt: string | null;
 };
 
+export function isJsonResponse(response: Response): boolean {
+	return (response.headers.get('content-type') ?? '').toLowerCase().includes('application/json');
+}
+
+export function isAuthRedirectResponse(response: Response): boolean {
+	return response.type === 'opaqueredirect' || response.redirected || (response.status >= 300 && response.status < 400);
+}
+
+export function redirectToLogin(): never {
+	const returnUrl = window.location.pathname + window.location.search;
+	window.location.assign(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+	throw new Error('Unauthorized');
+}
+
 export function buildUrl(path: string): string {
 	if (/^https?:\/\//.test(path)) {
 		return path;
@@ -105,14 +119,13 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
 
 	const response = await fetch(buildUrl(path), {
 		credentials: 'include',
+		redirect: 'manual',
 		...init,
 		headers
 	});
 
-	if (response.status === 401) {
-		const returnUrl = window.location.pathname + window.location.search;
-		window.location.assign(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
-		throw new Error('Unauthorized');
+	if (response.status === 401 || isAuthRedirectResponse(response)) {
+		redirectToLogin();
 	}
 
 	if (response.status === 403) {
@@ -133,8 +146,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
 		return undefined as T;
 	}
 
-	const contentType = response.headers.get('content-type') ?? '';
-	if (contentType.includes('application/json')) {
+	if (isJsonResponse(response)) {
 		return JSON.parse(text) as T;
 	}
 

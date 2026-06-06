@@ -1,5 +1,5 @@
 import { redirect } from '@sveltejs/kit';
-import { buildBackendUrl } from '$lib/api';
+import { buildBackendUrl, isAuthRedirectResponse, isJsonResponse } from '$lib/api';
 import type { AuthUserContract } from '$lib/api';
 import type { AuthUser } from '$lib/stores/auth';
 import type { LayoutLoad } from './$types';
@@ -14,6 +14,7 @@ export const load: LayoutLoad = async ({ url, fetch }) => {
 	try {
 		response = await fetch(buildBackendUrl('/auth/me'), {
 			credentials: 'include',
+			redirect: 'manual',
 			headers: { Accept: 'application/json' }
 		});
 	} catch {
@@ -27,7 +28,9 @@ export const load: LayoutLoad = async ({ url, fetch }) => {
 
 	let currentUser: AuthUser | null = null;
 
-	if (response.status === 200) {
+	if (isAuthRedirectResponse(response)) {
+		currentUser = null;
+	} else if (response.status === 200 && isJsonResponse(response)) {
 		const payload = (await response.json()) as AuthUserContract;
 		if (!payload.id) {
 			throw new Error('auth/me response missing id');
@@ -39,6 +42,8 @@ export const load: LayoutLoad = async ({ url, fetch }) => {
 			roles: payload.roles ?? [],
 			permissions: payload.permissions ?? []
 		};
+	} else if (response.status === 200) {
+		currentUser = null;
 	} else if (response.status !== 204) {
 		return {
 			user: null,
