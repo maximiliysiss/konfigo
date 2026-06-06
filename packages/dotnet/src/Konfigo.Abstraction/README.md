@@ -1,5 +1,11 @@
 # Konfigo.Abstraction
 
+[![NuGet](https://img.shields.io/badge/NuGet-Konfigo.Abstraction-004880?logo=nuget)](https://www.nuget.org/packages/Konfigo.Abstraction)
+[![Target Framework](https://img.shields.io/badge/target-netstandard2.0-512BD4?logo=dotnet)](Konfigo.Abstraction.csproj)
+[![CI/CD](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml/badge.svg)](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.0.1-blue)](../../../../VERSION)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](../../../../LICENSE)
+
 A minimal assembly with the attributes used to mark classes and properties that declare configuration for the Konfigo Realtime Config service. It contains only schema attributes, so it can be safely referenced from projects that declare configuration contracts without pulling in the runtime SDK (`Konfigo.Client`).
 
 ## Why it exists

@@ -1,5 +1,12 @@
 # Konfigo Python SDK
 
+[![Python](https://img.shields.io/badge/Python-%3E%3D3.11-3776AB?logo=python&logoColor=white)](pyproject.toml)
+[![PyPI](https://img.shields.io/badge/PyPI-konfigo-3775A9?logo=pypi&logoColor=white)](https://pypi.org/project/konfigo/)
+[![Typed](https://img.shields.io/badge/typing-typed-blue)](pyproject.toml)
+[![CI/CD](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml/badge.svg)](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.0.1-blue)](../../VERSION)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 Python client SDK for Konfigo Realtime Config. It mirrors the .NET SDK concepts:
 
 - config groups and keys are declared with decorators;

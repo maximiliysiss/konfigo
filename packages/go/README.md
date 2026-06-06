@@ -1,5 +1,11 @@
 # Konfigo Go SDK
 
+[![Go](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go)](go.mod)
+[![Module](https://img.shields.io/badge/module-github.com%2Fmaximiliysiss%2Fkonfigo%2Fpackages%2Fgo-00ADD8)](https://pkg.go.dev/github.com/maximiliysiss/konfigo/packages/go)
+[![CI/CD](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml/badge.svg)](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.0.1-blue)](../../VERSION)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](../../LICENSE)
+
 Go client SDK for Konfigo Realtime Config. It mirrors the .NET SDK concepts:
 
 - config groups and keys are declared with struct tags;

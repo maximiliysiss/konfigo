@@ -1,5 +1,12 @@
 # Konfigo .NET SDK
 
+[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](src/Konfigo.Client/Konfigo.Client.csproj)
+[![Konfigo.Client](https://img.shields.io/badge/NuGet-Konfigo.Client-004880?logo=nuget)](https://www.nuget.org/packages/Konfigo.Client)
+[![Konfigo.Abstraction](https://img.shields.io/badge/NuGet-Konfigo.Abstraction-004880?logo=nuget)](https://www.nuget.org/packages/Konfigo.Abstraction)
+[![CI/CD](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml/badge.svg)](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.0.1-blue)](../../VERSION)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](../../LICENSE)
+
 .NET packages for consuming Konfigo Realtime Config from applications.
 
 ## Packages

@@ -1,5 +1,11 @@
 # Konfigo.Client
 
+[![NuGet](https://img.shields.io/badge/NuGet-Konfigo.Client-004880?logo=nuget)](https://www.nuget.org/packages/Konfigo.Client)
+[![Target Framework](https://img.shields.io/badge/target-net8.0-512BD4?logo=dotnet)](Konfigo.Client.csproj)
+[![CI/CD](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml/badge.svg)](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.0.1-blue)](../../../../VERSION)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](../../../../LICENSE)
+
 Client SDK for the Konfigo Realtime Config service. It plugs configuration classes annotated with the attributes from [`Konfigo.Abstraction`](../Konfigo.Abstraction/README.md) into the standard `IConfiguration` / `IOptions<T>` pipeline and applies updates at runtime without restarting the host.
 
 ## How it works

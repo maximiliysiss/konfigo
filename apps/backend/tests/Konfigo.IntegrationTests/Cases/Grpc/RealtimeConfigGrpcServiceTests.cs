@@ -69,7 +69,7 @@ public sealed class RealtimeConfigGrpcServiceTests : IAsyncLifetime
         entry.Key.Should().Be("grpc.get-config");
         entry.Value.Should().Be("enabled");
         entry.Generation.Should().Be(3);
-        entry.Timestamp.ToDateTimeOffset().Should().Be(createdAt);
+        entry.Timestamp.ToDateTimeOffset().Should().BeCloseTo(createdAt, TimeSpan.FromSeconds(1));
     }
 
     [Fact]

@@ -111,7 +111,7 @@ public class RealtimeConfigProviderTests
     public void Set_ShouldUpdateTimestamp_WhenNew()
     {
         // Arrange
-        var dateTime = DateTimeOffset.UtcNow;
+        var dateTime = new DateTimeOffset(2026, 1, 1, 10, 0, 0, TimeSpan.Zero);
 
         var configEntry = new AutoFaker<ConfigEntry>()
             .RuleFor(c => c.Timestamp, dateTime)

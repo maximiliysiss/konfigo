@@ -1,5 +1,10 @@
 # Konfigo Wiki
 
+[![Docs](https://img.shields.io/badge/docs-Konfigo-blue)](../README.md)
+[![CI/CD](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml/badge.svg)](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.0.1-blue)](../VERSION)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](../LICENSE)
+
 Welcome to the Konfigo documentation hub.
 
 ## Pages

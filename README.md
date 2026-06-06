@@ -1,5 +1,13 @@
 # Konfigo
 
+[![CI/CD](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml/badge.svg)](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.0.1-blue)](VERSION)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](apps/backend/Directory.Build.props)
+[![Go](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go)](packages/go/go.mod)
+[![Python](https://img.shields.io/badge/Python-%3E%3D3.11-3776AB?logo=python&logoColor=white)](packages/python/pyproject.toml)
+[![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00?logo=svelte&logoColor=white)](apps/frontend/package.json)
+
 Konfigo is a centralized, real-time configuration management service. It lets you declare typed configuration schemas in your application code, push them to a shared backend, and receive live value updates over gRPC — without restarting services.
 
 ## How it works
