@@ -60,7 +60,7 @@ public sealed class UpdateServiceTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Update_ShouldReturnEmptyBody_WhenServiceDoesNotExist()
+    public async Task Update_ShouldReturnNotFound_WhenServiceDoesNotExist()
     {
         // Arrange
         using var client = _fixture.CreateAdminClient();
@@ -74,9 +74,8 @@ public sealed class UpdateServiceTests : IAsyncLifetime
         var response = await client.SendUpdateServiceAsync(Guid.NewGuid(), updateRequest);
 
         // Assert
-        response.IsSuccessStatusCode.Should().BeTrue();
-        var content = await response.Content.ReadAsStringAsync();
-        (string.IsNullOrEmpty(content) || content == "null").Should().BeTrue();
+        response.IsSuccessStatusCode.Should().BeFalse();
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]

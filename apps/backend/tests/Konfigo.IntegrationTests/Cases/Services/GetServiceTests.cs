@@ -45,7 +45,7 @@ public sealed class GetServiceTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetById_ShouldReturnEmptyBody_WhenNotExists()
+    public async Task GetById_ShouldReturnNotFound_WhenNotExists()
     {
         // Arrange
         using var client = _fixture.CreateAdminClient();
@@ -54,9 +54,8 @@ public sealed class GetServiceTests : IAsyncLifetime
         var response = await client.SendGetServiceAsync(Guid.NewGuid());
 
         // Assert
-        response.IsSuccessStatusCode.Should().BeTrue();
-        var content = await response.Content.ReadAsStringAsync();
-        (string.IsNullOrEmpty(content) || content == "null").Should().BeTrue();
+        response.IsSuccessStatusCode.Should().BeFalse();
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]

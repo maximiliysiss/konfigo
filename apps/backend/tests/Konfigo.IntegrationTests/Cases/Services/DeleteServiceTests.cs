@@ -46,7 +46,7 @@ public sealed class DeleteServiceTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Delete_ShouldReturnSuccess_WhenServiceDoesNotExist()
+    public async Task Delete_ShouldReturnNotFound_WhenServiceDoesNotExist()
     {
         // Arrange
         using var client = _fixture.CreateAdminClient();
@@ -55,7 +55,8 @@ public sealed class DeleteServiceTests : IAsyncLifetime
         var response = await client.SendDeleteServiceAsync(Guid.NewGuid());
 
         // Assert
-        response.IsSuccessStatusCode.Should().BeTrue();
+        response.IsSuccessStatusCode.Should().BeFalse();
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]

@@ -60,7 +60,7 @@ internal sealed class ServiceAccessActionFilter : IAsyncActionFilter
             if (!context.HttpContext.User.IsAllowed(service.Name))
             {
                 _logger.LogAccessDenied(id);
-                context.Result = new UnauthorizedResult();
+                context.Result = new ForbidResult();
                 return;
             }
 
