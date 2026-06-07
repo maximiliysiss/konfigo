@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 import json
 from types import NoneType, UnionType
-from typing import Any, Union, get_args, get_origin
+from typing import Any, Union, get_args, get_origin, get_type_hints
 
 from konfigo.definitions import KONFIGO_GROUP_ATTR, KONFIGO_KEY_METADATA
 
@@ -20,6 +20,7 @@ def bind_config(values: dict[str, str | None], cls: type[Any]) -> Any:
 
     section_key = group.key or cls.__name__
     kwargs: dict[str, Any] = {}
+    type_hints = get_type_hints(cls)
 
     for item in fields(cls):
         if KONFIGO_KEY_METADATA not in item.metadata:
@@ -29,7 +30,7 @@ def bind_config(values: dict[str, str | None], cls: type[Any]) -> Any:
         if raw is None:
             continue
 
-        kwargs[item.name] = parse_value(raw, item.type)
+        kwargs[item.name] = parse_value(raw, type_hints.get(item.name, item.type))
 
     return cls(**kwargs)
 

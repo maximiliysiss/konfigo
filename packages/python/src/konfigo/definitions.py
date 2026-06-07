@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta
 from enum import Enum
 import inspect
 from types import NoneType, UnionType
-from typing import Any, Iterable, Mapping, Sequence, Union, get_args, get_origin
+from typing import Any, Iterable, Mapping, Sequence, Union, get_args, get_origin, get_type_hints
 
 from konfigo.models import ValueType
 
@@ -104,8 +104,9 @@ def definition_from_class(cls: type[Any]) -> ClassDefinition | None:
         raise TypeError(f"{cls.__qualname__} must be a dataclass to be used as a Konfigo config group")
 
     section_key = group.key or cls.__name__
+    type_hints = get_type_hints(cls)
     options = tuple(
-        _option_from_field(section_key, item)
+        _option_from_field(section_key, item, type_hints.get(item.name, item.type))
         for item in fields(cls)
         if KONFIGO_KEY_METADATA in item.metadata
     )
@@ -119,14 +120,15 @@ def definition_from_class(cls: type[Any]) -> ClassDefinition | None:
     )
 
 
-def _option_from_field(section_key: str, item: Field[Any]) -> OptionDefinition:
+def _option_from_field(section_key: str, item: Field[Any], annotation: Any) -> OptionDefinition:
     metadata: ConfigKeyMetadata = item.metadata[KONFIGO_KEY_METADATA]
-    annotation = _strip_optional(item.type)
+    field_annotation = annotation
+    annotation = _strip_optional(field_annotation)
     value_type = _map_type(annotation)
     enum_values = tuple(member.name for member in annotation) if _is_enum(annotation) else None
     default_value = metadata.default_value
 
-    if default_value is None and not _is_optional(item.type):
+    if default_value is None and not _is_optional(field_annotation):
         default_value = _map_default_value(value_type, annotation)
 
     return OptionDefinition(

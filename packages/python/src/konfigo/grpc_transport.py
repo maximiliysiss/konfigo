@@ -45,7 +45,7 @@ class GrpcRealtimeConfigTransport:
         response = await self._stub.IsVersionExists(
             self._pb.IsVersionExistRequest(service_id=request.service_id, version=request.version)
         )
-        return IsVersionExistResponse(version_id=_unwrap_string(response.version_id))
+        return IsVersionExistResponse(version_id=_unwrap_string_field(response, "version_id"))
 
     async def create_version(self, request: CreateVersionRequest) -> CreateVersionResponse:
         response = await self._stub.CreateVersion(_map_create_version_request(self._pb, request))
@@ -91,7 +91,7 @@ def _map_create_version_request(pb: Any, request: CreateVersionRequest) -> Any:
 def _map_config_entry(item: Any) -> ConfigEntry:
     return ConfigEntry(
         key=item.key,
-        value=_unwrap_string(item.value),
+        value=_unwrap_string_field(item, "value"),
         type=ValueType(item.type),
         generation=item.generation,
         timestamp=_from_timestamp(item.timestamp),
@@ -106,6 +106,12 @@ def _unwrap_string(value: Any) -> str | None:
     if value is None:
         return None
     return getattr(value, "value", None)
+
+
+def _unwrap_string_field(message: Any, field_name: str) -> str | None:
+    if not message.HasField(field_name):
+        return None
+    return _unwrap_string(getattr(message, field_name))
 
 
 def _to_timestamp(pb: Any, value: datetime) -> Any:
