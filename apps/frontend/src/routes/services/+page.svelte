@@ -9,7 +9,6 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Card from '$lib/components/ui/Card.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
-	import Badge from '$lib/components/ui/Badge.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { showToast } from '$lib/stores/toast';
 
@@ -137,6 +136,11 @@
 		}
 	}
 
+	function formatServiceDate(value: string | null | undefined): string {
+		if (!value) return 'Never';
+		return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(value));
+	}
+
 	const userCanAll = $derived(canAll($user));
 </script>
 
@@ -214,34 +218,61 @@
 				<a href={`/services/${service.id}`} class="group block h-full">
 					<Card className="service-card h-full">
 						<div class="service-card-content">
-							<div class="service-card-glow" aria-hidden="true"></div>
 							<div class="service-card-topline">
 								<div class="service-avatar" aria-hidden="true">
 									<span>{service.name.slice(0, 2).toUpperCase()}</span>
 								</div>
-								<Badge variant="success" className="gap-[6px] pr-[9px]">
-									<span class="h-1.5 w-1.5 rounded-full bg-[var(--success)]"></span>
-									Active
-								</Badge>
+								<div class="service-card-heading">
+									<h2 class="service-title">{service.name}</h2>
+									<p class="service-updated">Updated {formatServiceDate(service.updatedAt ?? service.createdAt)}</p>
+								</div>
 							</div>
 
 							<div class="service-card-main">
-								<h2 class="service-title">{service.name}</h2>
 								<p class="service-description">{service.description ?? 'No description provided.'}</p>
 							</div>
 
-							<div class="service-meta-grid">
-								<div class="service-meta-item">
+							<div class="service-summary-row">
+								<div class="service-summary-item">
 									<span class="service-meta-label">Versions</span>
 									<strong>{service.versionCount ?? 0}</strong>
 								</div>
-								<div class="service-meta-item min-w-0">
-									<span class="service-meta-label">Repository</span>
-									{#if service.repositoryUrl}
-										<span class="service-repository" title={service.repositoryUrl}>{service.repositoryUrl}</span>
-									{:else}
-										<span class="service-empty-meta">Not linked</span>
-									{/if}
+								<div class="service-summary-item">
+									<span class="service-meta-label">Created</span>
+									<strong class="service-date-value">{formatServiceDate(service.createdAt)}</strong>
+								</div>
+							</div>
+
+							<div class="service-detail-list">
+								<div class="service-detail-item">
+									<span class="service-detail-icon" aria-hidden="true">
+										<svg viewBox="0 0 16 16" class="h-3.5 w-3.5" fill="none">
+											<path d="M6.5 3.5H5A2.5 2.5 0 0 0 2.5 6v4A2.5 2.5 0 0 0 5 12.5h1.5M9.5 3.5H11A2.5 2.5 0 0 1 13.5 6v4A2.5 2.5 0 0 1 11 12.5H9.5M6 8h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+										</svg>
+									</span>
+									<div class="service-detail-copy">
+										<span class="service-meta-label">Repository</span>
+										{#if service.repositoryUrl}
+											<span class="service-detail-value" title={service.repositoryUrl}>{service.repositoryUrl}</span>
+										{:else}
+											<span class="service-empty-meta">Not linked</span>
+										{/if}
+									</div>
+								</div>
+								<div class="service-detail-item">
+									<span class="service-detail-icon" aria-hidden="true">
+										<svg viewBox="0 0 16 16" class="h-3.5 w-3.5" fill="none">
+											<path d="M2.5 5.5 8 9l5.5-3.5M4 4h8a1.5 1.5 0 0 1 1.5 1.5v5A1.5 1.5 0 0 1 12 12H4a1.5 1.5 0 0 1-1.5-1.5v-5A1.5 1.5 0 0 1 4 4Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+										</svg>
+									</span>
+									<div class="service-detail-copy">
+										<span class="service-meta-label">Contact</span>
+										{#if service.contactEmail}
+											<span class="service-detail-value" title={service.contactEmail}>{service.contactEmail}</span>
+										{:else}
+											<span class="service-empty-meta">Not specified</span>
+										{/if}
+									</div>
 								</div>
 							</div>
 
@@ -344,27 +375,17 @@
 	.service-card-content {
 		position: relative;
 		display: flex;
-		min-height: 246px;
+		min-height: 318px;
 		height: 100%;
 		flex-direction: column;
-		gap: 18px;
-	}
-
-	.service-card-glow {
-		position: absolute;
-		inset: -20px -20px auto auto;
-		width: 120px;
-		height: 120px;
-		background: radial-gradient(circle, color-mix(in srgb, var(--accent) 18%, transparent), transparent 66%);
-		pointer-events: none;
+		gap: 16px;
 	}
 
 	.service-card-topline,
 	.service-card-footer {
 		position: relative;
 		display: flex;
-		align-items: center;
-		justify-content: space-between;
+		align-items: flex-start;
 		gap: 12px;
 		min-width: 0;
 	}
@@ -388,6 +409,12 @@
 		box-shadow: inset 0 1px 0 color-mix(in srgb, white 52%, transparent);
 	}
 
+	.service-card-heading {
+		min-width: 0;
+		flex: 1 1 auto;
+		padding-top: 1px;
+	}
+
 	.service-card-main {
 		position: relative;
 		min-width: 0;
@@ -401,25 +428,31 @@
 		overflow-wrap: anywhere;
 	}
 
+	.service-updated {
+		margin-top: 3px;
+		color: var(--text-tertiary);
+		font-size: 12px;
+	}
+
 	.service-description {
 		display: -webkit-box;
-		margin-top: 9px;
 		color: var(--text-secondary);
 		font-size: 14px;
+		line-height: 1.55;
 		line-clamp: 2;
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 	}
 
-	.service-meta-grid {
+	.service-summary-row {
 		display: grid;
-		grid-template-columns: minmax(94px, 0.42fr) minmax(0, 1fr);
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 10px;
 	}
 
-	.service-meta-item {
-		min-height: 64px;
+	.service-summary-item {
+		min-height: 68px;
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
@@ -439,12 +472,57 @@
 		text-transform: uppercase;
 	}
 
-	.service-meta-item strong {
-		font-size: 20px;
+	.service-summary-item strong {
+		color: var(--text-primary);
+		font-size: 22px;
 		line-height: 1;
 	}
 
-	.service-repository,
+	.service-date-value {
+		font-family: 'Inter', sans-serif;
+		font-size: 13px !important;
+		font-weight: 700;
+		line-height: 1.25 !important;
+	}
+
+	.service-detail-list {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.service-detail-item {
+		display: flex;
+		min-width: 0;
+		align-items: center;
+		gap: 10px;
+		border: 1px solid color-mix(in srgb, var(--border) 66%, transparent);
+		border-radius: 8px;
+		background: color-mix(in srgb, var(--bg-elevated) 66%, transparent);
+		padding: 9px 10px;
+	}
+
+	.service-detail-icon {
+		width: 28px;
+		height: 28px;
+		flex: 0 0 auto;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 7px;
+		background: var(--bg-subtle);
+		color: var(--text-secondary);
+	}
+
+	.service-detail-copy {
+		min-width: 0;
+		display: flex;
+		flex: 1 1 auto;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.service-detail-value,
 	.service-empty-meta {
 		min-width: 0;
 		overflow: hidden;
@@ -489,7 +567,7 @@
 	}
 
 	@media (max-width: 420px) {
-		.service-meta-grid {
+		.service-summary-row {
 			grid-template-columns: 1fr;
 		}
 
