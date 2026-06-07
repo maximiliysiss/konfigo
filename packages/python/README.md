@@ -21,15 +21,10 @@ Python client SDK for Konfigo Realtime Config. It mirrors the .NET SDK concepts:
 pip install -e .
 ```
 
-For the gRPC adapter:
+For the gRPC adapter, install the `grpc` extra — the `service_pb2` / `service_pb2_grpc` modules are pre-generated from `protos/service.proto` and ship with the package:
 
 ```bash
 pip install -e ".[grpc]"
-python -m grpc_tools.protoc \
-  -I protos \
-  --python_out=src/konfigo \
-  --grpc_python_out=src/konfigo \
-  protos/service.proto
 ```
 
 ## Declaring Options

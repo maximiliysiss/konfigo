@@ -128,12 +128,61 @@ jobs:
         run: dotnet test --configuration Release --logger "console;verbosity=normal"
         working-directory: apps/backend
 
+  # ── Sample builds ─────────────────────────────────────────────────────────
+
+  build-samples:
+    name: Build · Samples (${{ matrix.sample }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - sample: Go
+          - sample: Python
+          - sample: .NET
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        if: matrix.sample == 'Go'
+        with:
+          go-version-file: samples/go/go.mod
+          cache-dependency-path: samples/go/go.sum
+      - name: Build Go sample
+        if: matrix.sample == 'Go'
+        run: go build ./...
+        working-directory: samples/go
+
+      - uses: actions/setup-python@v5
+        if: matrix.sample == 'Python'
+        with:
+          python-version: '3.12'
+      - name: Install Python sample dependencies
+        if: matrix.sample == 'Python'
+        run: pip install -r requirements.txt
+        working-directory: samples/python
+      - name: Compile Python sample
+        if: matrix.sample == 'Python'
+        run: python -m compileall app.py
+        working-directory: samples/python
+
+      - uses: actions/setup-dotnet@v4
+        if: matrix.sample == '.NET'
+      - name: Restore .NET sample
+        if: matrix.sample == '.NET'
+        run: dotnet restore
+        working-directory: samples/dotnet
+      - name: Build .NET sample
+        if: matrix.sample == '.NET'
+        run: dotnet build --configuration Release --no-restore
+        working-directory: samples/dotnet
+
   # ── Publish packages ───────────────────────────────────────────────────────
 
   publish-go:
     name: Publish · Go package
     if: github.event_name == 'release'
-    needs: [validate-version, test-go, test-python, test-dotnet-package, test-backend]
+    needs: [validate-version, test-go, test-python, test-dotnet-package, test-backend, build-samples]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -149,7 +198,7 @@ jobs:
   publish-python:
     name: Publish · Python package
     if: github.event_name == 'release'
-    needs: [validate-version, test-go, test-python, test-dotnet-package, test-backend]
+    needs: [validate-version, test-go, test-python, test-dotnet-package, test-backend, build-samples]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -170,7 +219,7 @@ jobs:
   publish-dotnet-package:
     name: Publish · .NET package
     if: github.event_name == 'release'
-    needs: [validate-version, test-go, test-python, test-dotnet-package, test-backend]
+    needs: [validate-version, test-go, test-python, test-dotnet-package, test-backend, build-samples]
     runs-on: ubuntu-latest
     env:
       NuGetDirectory: ${{ github.workspace }}/nuget
@@ -194,7 +243,7 @@ jobs:
   docker-backend:
     name: Docker · Backend
     if: github.event_name == 'release'
-    needs: [validate-version, test-go, test-python, test-dotnet-package, test-backend]
+    needs: [validate-version, test-go, test-python, test-dotnet-package, test-backend, build-samples]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -238,7 +287,7 @@ jobs:
   docker-frontend:
     name: Docker · Frontend
     if: github.event_name == 'release'
-    needs: [validate-version, test-go, test-python, test-dotnet-package, test-backend]
+    needs: [validate-version, test-go, test-python, test-dotnet-package, test-backend, build-samples]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

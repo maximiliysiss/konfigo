@@ -1,0 +1,70 @@
+site_name: Konfigo
+site_description: Centralized, real-time configuration management service
+site_url: https://maximiliysiss.github.io/konfigo/
+repo_name: maximiliysiss/konfigo
+repo_url: https://github.com/maximiliysiss/konfigo
+edit_uri: edit/master/docs/
+
+docs_dir: docs
+
+theme:
+  name: material
+  logo: ../apps/frontend/static/app-icon.png
+  favicon: ../apps/frontend/static/app-icon.png
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - content.code.copy
+    - content.action.edit
+    - search.suggest
+    - search.highlight
+
+nav:
+  - Home: index.md
+  - Architecture: architecture.md
+  - Deployment: deployment.md
+  - REST API: api.md
+  - gRPC Protocol: grpc.md
+  - SDKs:
+      - Overview: sdks/index.md
+      - .NET: sdks/dotnet.md
+      - Go: sdks/go.md
+      - Python: sdks/python.md
+  - Samples: samples.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/maximiliysiss/konfigo

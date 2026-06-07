@@ -29,5 +29,5 @@ Environment variables:
 |----------|---------|
 | `KONFIGO_GRPC_URL` | `localhost:8081` |
 | `KONFIGO_SERVICE_ID` | `f89f7a09-d71d-459d-b02c-07213ed0eaa4` |
-| `KONFIGO_VERSION` | `1.0.13` |
+| `KONFIGO_VERSION` | `1.0.14` |
 | `HTTP_ADDR` | `:8088` |

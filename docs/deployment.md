@@ -262,7 +262,7 @@ dotnet run --project src/Konfigo -- --migrate-only
 
 ## CI/CD
 
-See [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). The pipeline:
+See [`.github/workflows/ci.yml`](https://github.com/maximiliysiss/konfigo/blob/master/.github/workflows/ci.yml). The pipeline:
 
 1. Runs all test suites in parallel on every push and pull request.
 2. On a GitHub **release**, publishes:

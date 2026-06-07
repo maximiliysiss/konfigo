@@ -32,6 +32,10 @@ konfigo/
 │   ├── dotnet/           # .NET client SDK (NuGet)
 │   ├── go/               # Go client SDK
 │   └── python/           # Python client SDK (PyPI)
+├── samples/              # Minimal runnable apps demonstrating each SDK
+│   ├── dotnet/           # ASP.NET Core sample using Konfigo.Client
+│   ├── go/               # Go sample using the Go SDK + gRPC transport
+│   └── python/           # Async Python sample using the Python SDK + gRPC transport
 └── docs/                 # Extended documentation & wiki
 ```
 
@@ -169,7 +173,24 @@ payments = bind_config(client.store.snapshot(), PaymentsOptions)
 
 Full guide: [packages/python/README.md](packages/python/README.md)
 
+## Samples
+
+Minimal runnable applications that register a config schema, watch live updates over gRPC,
+and expose the bound options at `/options`. Each one points at a local backend started via
+`docker compose up -d` (see [Quick start](#quick-start)):
+
+| Sample | Description |
+|--------|-------------|
+| [samples/dotnet](samples/dotnet) | ASP.NET Core minimal API using `Konfigo.Client` and `IOptionsSnapshot<T>` |
+| [samples/go](samples/go) | Go HTTP server using the Go SDK, struct tags, and the gRPC transport |
+| [samples/python](samples/python) | Async Python HTTP server using the Python SDK, dataclasses, and the gRPC transport |
+
 ## Documentation
+
+The full wiki is published with [MkDocs Material](https://squidfunk.github.io/mkdocs-material/)
+at **https://maximiliysiss.github.io/konfigo/** (built from [`docs/`](docs/) by
+[`.github/workflows/docs.yml`](.github/workflows/docs.yml) on every push to `master`).
+To preview it locally: `pip install -r docs/requirements.txt && mkdocs serve`.
 
 | Topic | File |
 |-------|------|
