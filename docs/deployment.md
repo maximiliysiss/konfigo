@@ -148,8 +148,8 @@ All settings follow ASP.NET Core's double-underscore (`__`) convention for neste
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `ConnectionStrings__Postgres` | PostgreSQL connection string | `Host=db;Database=konfigo;...` |
-| `ConnectionStrings__Redis` | Redis connection string | `redis:6379` |
+| `ConnectionStrings__Postgres` | PostgreSQL connection string for persistence and Publo-backed event delivery | `Host=db;Database=konfigo;...` |
+| `ConnectionStrings__Redis` | Redis connection string for distributed locks | `redis:6379` |
 | `ASPNETCORE_ENVIRONMENT` | Environment name | `Production`, `Testing` |
 | `Authentication__Provider` | Auth provider | `Saml`, `OpenId`, `Jwt` |
 | `Authentication__RoleClaimType` | Claim type used for roles | `role`, `groups` |

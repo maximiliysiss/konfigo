@@ -19,7 +19,8 @@ Konfigo is composed of three layers: a server backend, a web UI, and per-languag
 └───────┬─────────────────────────────┘
         │           │
   PostgreSQL      Redis
-  (persistence)  (outbox / pub-sub)
+  (persistence,   (distributed
+   Publo outbox)   locks)
         ▲
         │ gRPC
 ┌───────┴──────────────────────────────┐
@@ -65,12 +66,18 @@ ApplicationService (1) ──< ConfigVersion (1) ──< ConfigEntry
 
 ### Real-time delivery
 
-Config changes flow to connected SDKs through an in-process **outbox** pattern:
+Config changes flow to connected SDKs through an in-process subscriber registry plus a
+PostgreSQL-backed Publo outbox for cross-replica delivery:
 
-1. `ConfigEntryService.SetAsync` saves the new value and emits a `ChangeEvent` to `UpdaterService`.
-2. `UpdaterService` fans the event out to all active `Subscriber` instances (one per gRPC stream).
-3. Each `Subscriber` yields the event to the gRPC `StartSubscribe` stream handler, which writes it to the client.
-4. The `GrpcConfigChangeNotifier` additionally handles cross-instance delivery via Redis pub-sub when multiple backend replicas are deployed.
+1. `ConfigEntryService.SetAsync` saves the new value and emits a notification through `GrpcConfigChangeNotifier`.
+2. `GrpcConfigChangeNotifier` writes a `GrpcEvent` through Publo, which is configured to use PostgreSQL.
+3. Each backend replica runs `GrpcEventExecutor` and republishes received events to its local `UpdaterService`.
+4. `UpdaterService` fans the event out to all active `Subscriber` instances in that replica, one per gRPC stream.
+5. Each `Subscriber` yields the event to the gRPC `StartSubscribe` stream handler, which writes it to the client.
+
+Redis is not used for gRPC event fan-out. It is used by the backend's distributed lock provider,
+for example to serialize concurrent config version generation and config entry updates across
+multiple backend replicas.
 
 ### Authentication
 
@@ -145,5 +152,5 @@ All three SDKs share the same `service.proto`. See [grpc.md](grpc.md) for the fu
 
 | Service | Version | Purpose |
 |---------|---------|---------|
-| PostgreSQL | 14+ | Persistent storage |
-| Redis | 7+ | Real-time event fan-out across replicas |
+| PostgreSQL | 14+ | Persistent storage and Publo-backed cross-replica event delivery |
+| Redis | 7+ | Distributed locks across backend replicas |

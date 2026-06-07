@@ -92,6 +92,9 @@ The backend listens on `http://localhost:8080`, the frontend dev server on
 `http://localhost:3000`. Use the nginx URL for the web UI so frontend, REST, auth,
 and SignalR requests share one browser origin.
 
+PostgreSQL stores application data and the Publo-backed event stream used for cross-replica
+gRPC notifications. Redis is used for distributed locks across backend replicas.
+
 ### Docker images (production)
 
 Pre-built images are published to DockerHub and GHCR on every GitHub release:

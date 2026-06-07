@@ -24,7 +24,7 @@ internal sealed class ConfigEntryRepository(AppDbContext context) : IConfigEntry
 
         if (request.From is not null)
         {
-            query = query.Where(x => (x.UpdatedAt ?? x.CreatedAt) > request.From);
+            query = query.Where(x => (x.UpdatedAt ?? x.CreatedAt) >= request.From);
         }
 
         if (!request.AsTracking)
