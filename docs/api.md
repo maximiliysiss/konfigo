@@ -30,7 +30,6 @@ Response:
       "name": "Orders",
       "description": "...",
       "repositoryUrl": "https://github.com/org/repo",
-      "gitLabProjectId": "123",
       "contactEmail": "team@example.com"
     }
   ],
@@ -57,7 +56,6 @@ Request body:
   "name": "Orders",
   "description": "Order processing service",
   "repositoryUrl": "https://github.com/org/orders",
-  "gitLabProjectId": "456",
   "contactEmail": "orders-team@example.com"
 }
 ```

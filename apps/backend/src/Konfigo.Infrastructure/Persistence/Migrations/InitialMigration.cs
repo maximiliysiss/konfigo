@@ -17,7 +17,6 @@ CREATE TABLE public.application_services (
     name text NOT NULL,
     description text NULL,
     repository_url text NULL,
-    gitlab_project_id text NULL,
     contact_email text NULL,
     num int NOT NULL GENERATED ALWAYS AS IDENTITY
 );

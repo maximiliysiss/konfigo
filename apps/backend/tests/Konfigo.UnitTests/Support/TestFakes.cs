@@ -20,7 +20,6 @@ internal static class TestFakes
         string? name = null,
         string? description = null,
         string? repositoryUrl = null,
-        string? gitLabProjectId = null,
         string? contactEmail = null)
     {
         var service = AutoFaker.Generate<ApplicationService>();
@@ -29,7 +28,6 @@ internal static class TestFakes
         service.Name = name ?? service.Name;
         service.Description = description ?? service.Description;
         service.RepositoryUrl = repositoryUrl ?? service.RepositoryUrl;
-        service.GitLabProjectId = gitLabProjectId ?? service.GitLabProjectId;
         service.ContactEmail = contactEmail ?? service.ContactEmail;
         service.CreatedAt = Now;
         service.ConfigVersions = [];

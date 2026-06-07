@@ -244,7 +244,6 @@ public sealed class ConfigEntryRepositoryTests : IAsyncLifetime
             Name = $"svc-{Guid.NewGuid():N}",
             Description = null,
             RepositoryUrl = null,
-            GitLabProjectId = null,
             ContactEmail = null,
             CreatedAt = _now,
         };

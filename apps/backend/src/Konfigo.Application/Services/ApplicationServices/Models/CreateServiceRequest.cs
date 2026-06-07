@@ -6,6 +6,5 @@ public sealed record CreateServiceRequest(
     string Name,
     string? Description,
     string? RepositoryUrl,
-    string? GitLabProjectId,
     string? ContactEmail,
     UserId CreatedBy);

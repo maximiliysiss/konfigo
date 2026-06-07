@@ -21,7 +21,7 @@ internal sealed class ApplicationServiceDbHelper : IDbHelper, ITracker<Guid>
     public async Task<TableRow?> GetAsync(Guid id)
     {
         const string sql = @"
-SELECT id, name, description, repository_url, gitlab_project_id, contact_email,
+SELECT id, name, description, repository_url, contact_email,
        created_at, updated_at
 FROM public.application_services
 WHERE id = :id;
@@ -42,7 +42,6 @@ WHERE id = :id;
         {
             Id = id,
             ContactEmail = reader.GetNullableString("contact_email"),
-            GitLabProjectId = reader.GetNullableString("gitlab_project_id"),
             CreatedAt = reader.GetFieldValue<DateTimeOffset>("created_at"),
             UpdatedAt = reader.GetFieldValue<DateTimeOffset?>("updated_at"),
             Description = reader.GetNullableString("description"),
@@ -55,9 +54,9 @@ WHERE id = :id;
     {
         const string sql = @"
 INSERT INTO public.application_services
-    (id, name, description, repository_url, gitlab_project_id, contact_email, created_at, updated_at)
+    (id, name, description, repository_url, contact_email, created_at, updated_at)
 VALUES
-    (:id, :name, :description, :repositoryUrl, :gitLabProjectId, :contactEmail, :createdAt, :updatedAt);
+    (:id, :name, :description, :repositoryUrl, :contactEmail, :createdAt, :updatedAt);
 ";
         _ids.Add(row.Id);
 
@@ -71,7 +70,6 @@ VALUES
                 { "name", row.Name },
                 { "description", row.Description },
                 { "repositoryUrl", row.RepositoryUrl },
-                { "gitLabProjectId", row.GitLabProjectId },
                 { "contactEmail", row.ContactEmail },
                 { "createdAt", row.CreatedAt },
                 { "updatedAt", row.UpdatedAt },
@@ -113,7 +111,6 @@ WHERE id = ANY(:ids);
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string? RepositoryUrl { get; set; }
-        public string? GitLabProjectId { get; set; }
         public string? ContactEmail { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? UpdatedAt { get; set; }

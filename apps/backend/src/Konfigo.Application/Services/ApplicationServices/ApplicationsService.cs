@@ -41,7 +41,6 @@ internal sealed class ApplicationsService : IApplicationsService
             Name = request.Name,
             Description = request.Description,
             RepositoryUrl = request.RepositoryUrl,
-            GitLabProjectId = request.GitLabProjectId,
             ContactEmail = request.ContactEmail,
             CreatedAt = _dateTimeProvider.GetNow(),
         };
@@ -71,7 +70,6 @@ internal sealed class ApplicationsService : IApplicationsService
             Name: request.Name,
             Description: request.Description,
             RepositoryUrl: request.RepositoryUrl,
-            GitLabProjectId: request.GitLabProjectId,
             ContactEmail: request.ContactEmail);
 
         service.Update(updateServiceRequest, _dateTimeProvider.GetNow());

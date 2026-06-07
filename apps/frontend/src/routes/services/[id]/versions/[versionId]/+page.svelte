@@ -109,7 +109,6 @@
 	let editName = $state('');
 	let editDescription = $state('');
 	let editRepositoryUrl = $state('');
-	let editGitLabProjectId = $state('');
 	let editContactEmail = $state('');
 	let savingService = $state(false);
 
@@ -581,7 +580,6 @@
 					name: editName,
 					description: editDescription,
 					repositoryUrl: editRepositoryUrl,
-					gitLabProjectId: editGitLabProjectId,
 					contactEmail: editContactEmail
 				})
 			});
@@ -599,7 +597,6 @@
 		editName = service.name;
 		editDescription = service.description ?? '';
 		editRepositoryUrl = service.repositoryUrl ?? '';
-		editGitLabProjectId = service.gitLabProjectId ?? '';
 		editContactEmail = service.contactEmail ?? '';
 	}
 
@@ -691,7 +688,6 @@
 			name: 'Name',
 			description: 'Description',
 			repositoryUrl: 'Repository URL',
-			gitLabProjectId: 'GitLab Project ID',
 			contactEmail: 'Contact email',
 			userId: 'User ID',
 			versionLabel: 'Version',
@@ -1122,7 +1118,6 @@
 						<Input label="Name" bind:value={editName} />
 						<Textarea label="Description" bind:value={editDescription} />
 						<Input label="Repository URL" bind:value={editRepositoryUrl} />
-						<Input label="GitLab Project ID" bind:value={editGitLabProjectId} />
 						<Input label="Contact Email" bind:value={editContactEmail} />
 						<div class="flex justify-end">
 							<Button loading={savingService} onclick={saveInfo}>Save changes</Button>
@@ -1145,10 +1140,6 @@
 						<div class="space-y-3 md:col-span-2">
 							<p class="text-[13px] text-[var(--text-secondary)]">Description</p>
 							<p class="text-[14px] text-[var(--text-primary)]">{service.description ?? 'No description available.'}</p>
-						</div>
-						<div class="space-y-3">
-							<p class="text-[13px] text-[var(--text-secondary)]">GitLab Project ID</p>
-							<p class="text-[14px] text-[var(--text-primary)]">{service.gitLabProjectId ?? '-'}</p>
 						</div>
 						<div class="space-y-3">
 							<p class="text-[13px] text-[var(--text-secondary)]">Contact Email</p>

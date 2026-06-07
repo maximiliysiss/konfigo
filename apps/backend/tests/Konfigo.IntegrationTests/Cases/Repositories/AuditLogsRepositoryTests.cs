@@ -207,7 +207,6 @@ public sealed class AuditLogsRepositoryTests : IAsyncLifetime
                 Name: $"svc-{Guid.NewGuid():N}",
                 Description: "desc",
                 RepositoryUrl: null,
-                GitLabProjectId: null,
                 ContactEmail: null),
             CreatedAt = _now,
         };

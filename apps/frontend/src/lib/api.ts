@@ -22,7 +22,6 @@ export type ApplicationServiceContract = {
 	name: string;
 	description: string | null;
 	repositoryUrl: string | null;
-	gitLabProjectId: string | null;
 	contactEmail: string | null;
 	createdAt: string;
 	updatedAt: string | null;

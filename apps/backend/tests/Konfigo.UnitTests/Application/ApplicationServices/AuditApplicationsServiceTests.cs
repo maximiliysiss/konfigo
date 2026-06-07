@@ -43,7 +43,6 @@ public sealed class AuditApplicationsServiceTests
                 ((ServiceCreatedEntry)log.Entry).Name == request.Name &&
                 ((ServiceCreatedEntry)log.Entry).Description == request.Description &&
                 ((ServiceCreatedEntry)log.Entry).RepositoryUrl == request.RepositoryUrl &&
-                ((ServiceCreatedEntry)log.Entry).GitLabProjectId == request.GitLabProjectId &&
                 ((ServiceCreatedEntry)log.Entry).ContactEmail == request.ContactEmail),
             Arg.Any<CancellationToken>());
     }
@@ -77,7 +76,6 @@ public sealed class AuditApplicationsServiceTests
                 ((ServiceUpdatedEntry)log.Entry).Name == request.Name &&
                 ((ServiceUpdatedEntry)log.Entry).Description == request.Description &&
                 ((ServiceUpdatedEntry)log.Entry).RepositoryUrl == request.RepositoryUrl &&
-                ((ServiceUpdatedEntry)log.Entry).GitLabProjectId == request.GitLabProjectId &&
                 ((ServiceUpdatedEntry)log.Entry).ContactEmail == request.ContactEmail),
             Arg.Any<CancellationToken>());
     }
@@ -109,7 +107,6 @@ public sealed class AuditApplicationsServiceTests
                 ((ServiceDeletedEntry)log.Entry).Name == deleted.Name &&
                 ((ServiceDeletedEntry)log.Entry).Description == deleted.Description &&
                 ((ServiceDeletedEntry)log.Entry).RepositoryUrl == deleted.RepositoryUrl &&
-                ((ServiceDeletedEntry)log.Entry).GitLabProjectId == deleted.GitLabProjectId &&
                 ((ServiceDeletedEntry)log.Entry).ContactEmail == deleted.ContactEmail),
             Arg.Any<CancellationToken>());
     }

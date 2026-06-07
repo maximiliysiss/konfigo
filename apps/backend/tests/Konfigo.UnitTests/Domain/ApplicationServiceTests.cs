@@ -15,13 +15,11 @@ public sealed class ApplicationServiceTests
             name: "old",
             description: "old-d",
             repositoryUrl: "old-url",
-            gitLabProjectId: "1",
             contactEmail: "a@a");
         var request = new UpdateServiceRequest(
             Name: "new",
             Description: "new-d",
             RepositoryUrl: "new-url",
-            GitLabProjectId: "2",
             ContactEmail: "b@b");
 
         // Act
@@ -31,7 +29,6 @@ public sealed class ApplicationServiceTests
         service.Name.Should().Be("new");
         service.Description.Should().Be("new-d");
         service.RepositoryUrl.Should().Be("new-url");
-        service.GitLabProjectId.Should().Be("2");
         service.ContactEmail.Should().Be("b@b");
     }
 
@@ -40,7 +37,7 @@ public sealed class ApplicationServiceTests
     {
         // Arrange
         var service = TestFakes.BuildService();
-        var request = new UpdateServiceRequest("n", null, null, null, null);
+        var request = new UpdateServiceRequest("n", null, null, null);
         var moment = TestFakes.Now.AddHours(1);
 
         // Act

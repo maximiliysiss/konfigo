@@ -21,14 +21,12 @@ public sealed record ServiceCreatedEntry(
     string Name,
     string? Description,
     string? RepositoryUrl,
-    string? GitLabProjectId,
     string? ContactEmail) : LogEntry(LogType.ServiceCreated);
 
 public sealed record ServiceUpdatedEntry(
     string Name,
     string? Description,
     string? RepositoryUrl,
-    string? GitLabProjectId,
     string? ContactEmail) : LogEntry(LogType.ServiceUpdated);
 
 public sealed record ServiceMemberAddedEntry(UserId UserId) : LogEntry(LogType.ServiceMemberAdded);
@@ -39,7 +37,6 @@ public sealed record ServiceDeletedEntry(
     string Name,
     string? Description,
     string? RepositoryUrl,
-    string? GitLabProjectId,
     string? ContactEmail) : LogEntry(LogType.ServiceDeleted);
 
 public sealed record VersionCreatedEntry(

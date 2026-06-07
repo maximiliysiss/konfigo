@@ -107,7 +107,6 @@ public sealed class ServicesController : ControllerBase
             Name: request.Name,
             Description: request.Description,
             RepositoryUrl: request.RepositoryUrl,
-            GitLabProjectId: request.GitLabProjectId,
             ContactEmail: request.ContactEmail,
             CreatedBy: User.GetId());
 
@@ -130,7 +129,6 @@ public sealed class ServicesController : ControllerBase
             Name: request.Name,
             Description: request.Description,
             RepositoryUrl: request.RepositoryUrl,
-            GitLabProjectId: request.GitLabProjectId,
             ContactEmail: request.ContactEmail,
             UpdatedBy: User.GetId());
 

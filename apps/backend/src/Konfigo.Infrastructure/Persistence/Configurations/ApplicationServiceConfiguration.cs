@@ -24,7 +24,6 @@ internal sealed class ApplicationServiceConfiguration : IEntityTypeConfiguration
         builder.Property(x => x.Name).HasColumnName("name").IsRequired();
         builder.Property(x => x.Description).HasColumnName("description");
         builder.Property(x => x.RepositoryUrl).HasColumnName("repository_url");
-        builder.Property(x => x.GitLabProjectId).HasColumnName("gitlab_project_id");
         builder.Property(x => x.ContactEmail).HasColumnName("contact_email");
 
         builder

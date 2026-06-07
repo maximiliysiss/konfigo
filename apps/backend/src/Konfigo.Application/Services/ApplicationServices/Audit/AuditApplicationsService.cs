@@ -43,7 +43,6 @@ internal sealed class AuditApplicationsService : IApplicationsService
                 Name: request.Name,
                 Description: request.Description,
                 RepositoryUrl: request.RepositoryUrl,
-                GitLabProjectId: request.GitLabProjectId,
                 ContactEmail: request.ContactEmail),
             ServiceId = applicationService.Id,
             UserId = request.CreatedBy,
@@ -79,7 +78,6 @@ internal sealed class AuditApplicationsService : IApplicationsService
                     Name: request.Name,
                     Description: request.Description,
                     RepositoryUrl: request.RepositoryUrl,
-                    GitLabProjectId: request.GitLabProjectId,
                     ContactEmail: request.ContactEmail)
             };
 
@@ -109,7 +107,6 @@ internal sealed class AuditApplicationsService : IApplicationsService
                     Name: service.Name,
                     Description: service.Description,
                     RepositoryUrl: service.RepositoryUrl,
-                    GitLabProjectId: service.GitLabProjectId,
                     ContactEmail: service.ContactEmail),
                 ServiceId = request.Id,
                 UserId = request.DeletedBy,

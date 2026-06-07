@@ -14,7 +14,6 @@
 	let name = $state('');
 	let description = $state('');
 	let repositoryUrl = $state('');
-	let gitLabProjectId = $state('');
 	let contactEmail = $state('');
 	let saving = $state(false);
 	let error = $state('');
@@ -50,7 +49,6 @@
 					name: name.trim(),
 					description,
 					repositoryUrl: repositoryUrl.trim(),
-					gitLabProjectId,
 					contactEmail: contactEmail.trim()
 				})
 			});
@@ -99,7 +97,6 @@
 					</div>
 					<div class="space-y-5">
 						<Input id="repo" label="Repository URL" placeholder="https://gitlab.example.com/group/service" bind:value={repositoryUrl} />
-						<Input id="gitlab" label="GitLab Project ID" placeholder="Project ID" bind:value={gitLabProjectId} />
 						<Input id="contact" label="Contact Email" type="email" placeholder="team@example.com" bind:value={contactEmail} />
 					</div>
 				</section>

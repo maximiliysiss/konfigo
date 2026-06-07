@@ -49,7 +49,6 @@ public sealed class ApplicationRepositoryTests : IAsyncLifetime
         row!.Name.Should().Be(service.Name);
         row.Description.Should().Be(service.Description);
         row.RepositoryUrl.Should().Be(service.RepositoryUrl);
-        row.GitLabProjectId.Should().Be(service.GitLabProjectId);
         row.ContactEmail.Should().Be(service.ContactEmail);
     }
 
@@ -196,7 +195,6 @@ public sealed class ApplicationRepositoryTests : IAsyncLifetime
             Name = name ?? $"svc-{Guid.NewGuid():N}",
             Description = "desc",
             RepositoryUrl = "https://repo",
-            GitLabProjectId = "42",
             ContactEmail = "team@example.com",
             CreatedAt = _now,
         };

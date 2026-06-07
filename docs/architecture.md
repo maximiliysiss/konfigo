@@ -55,7 +55,7 @@ ApplicationService (1) ──< ConfigVersion (1) ──< ConfigEntry
 
 | Entity | Key fields |
 |--------|-----------|
-| `ApplicationService` | `Id (ServiceId)`, `Name`, `Description`, `RepositoryUrl`, `GitLabProjectId`, `ContactEmail` |
+| `ApplicationService` | `Id (ServiceId)`, `Name`, `Description`, `RepositoryUrl`, `ContactEmail` |
 | `ConfigVersion` | `Id (VersionId)`, `ServiceId`, `VersionLabel`, `Description` |
 | `ConfigEntry` | `Id (EntryId)`, `VersionId`, `Key`, `Name`, `RawValue`, `ValueType`, `Generation`, `GroupName` |
 
