@@ -21,6 +21,7 @@ const (
 type ConfigEntry struct {
 	Key        string
 	Value      *string
+	Type       ValueType
 	Generation int32
 	Timestamp  time.Time
 }

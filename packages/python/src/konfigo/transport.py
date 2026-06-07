@@ -4,6 +4,7 @@ from collections.abc import AsyncIterator
 from typing import Protocol
 
 from konfigo.models import (
+    ConfigEntry,
     CreateVersionRequest,
     CreateVersionResponse,
     IsVersionExistRequest,
@@ -21,4 +22,9 @@ class RealtimeConfigTransport(Protocol):
         ...
 
     def start_subscribe(self, request: StartSubscribeRequest) -> AsyncIterator[SubscriptionEvent]:
+        ...
+
+
+class InitialConfigTransport(RealtimeConfigTransport, Protocol):
+    async def get_config(self, service_id: str, version: str) -> tuple[ConfigEntry, ...]:
         ...

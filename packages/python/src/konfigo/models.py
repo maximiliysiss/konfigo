@@ -27,6 +27,7 @@ class ConfigEntry:
     value: str | None
     generation: int
     timestamp: datetime
+    type: ValueType = ValueType.UNKNOWN
 
 
 @dataclass(frozen=True, slots=True)

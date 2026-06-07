@@ -144,7 +144,9 @@ func (x *GetConfigRequest) GetVersion() string {
 
 type GetConfigResponse struct {
 	state         protoimpl.MessageState           `protogen:"open.v1"`
-	Entries       []*GetConfigResponse_ConfigEntry `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries,omitempty"`
+	ServiceId     string                           `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	VersionId     string                           `protobuf:"bytes,2,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`
+	Entries       []*GetConfigResponse_ConfigEntry `protobuf:"bytes,3,rep,name=entries,proto3" json:"entries,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -177,6 +179,20 @@ func (x *GetConfigResponse) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetConfigResponse.ProtoReflect.Descriptor instead.
 func (*GetConfigResponse) Descriptor() ([]byte, []int) {
 	return file_service_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GetConfigResponse) GetServiceId() string {
+	if x != nil {
+		return x.ServiceId
+	}
+	return ""
+}
+
+func (x *GetConfigResponse) GetVersionId() string {
+	if x != nil {
+		return x.VersionId
+	}
+	return ""
 }
 
 func (x *GetConfigResponse) GetEntries() []*GetConfigResponse_ConfigEntry {
@@ -496,6 +512,7 @@ type GetConfigResponse_ConfigEntry struct {
 	Value         *wrapperspb.StringValue `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	Generation    int32                   `protobuf:"varint,3,opt,name=generation,proto3" json:"generation,omitempty"`
 	Timestamp     *timestamppb.Timestamp  `protobuf:"bytes,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Type          ValueType               `protobuf:"varint,5,opt,name=type,proto3,enum=konfigo.client.ValueType" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -556,6 +573,13 @@ func (x *GetConfigResponse_ConfigEntry) GetTimestamp() *timestamppb.Timestamp {
 		return x.Timestamp
 	}
 	return nil
+}
+
+func (x *GetConfigResponse_ConfigEntry) GetType() ValueType {
+	if x != nil {
+		return x.Type
+	}
+	return ValueType_VALUE_TYPE_UNKNOWN
 }
 
 type CreateVersionRequest_ClassEntry struct {
@@ -708,6 +732,7 @@ type SubscriptionEvent_ConfigEvent struct {
 	Value         *wrapperspb.StringValue `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	Generation    int32                   `protobuf:"varint,3,opt,name=generation,proto3" json:"generation,omitempty"`
 	Timestamp     *timestamppb.Timestamp  `protobuf:"bytes,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Type          ValueType               `protobuf:"varint,5,opt,name=type,proto3,enum=konfigo.client.ValueType" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -770,6 +795,13 @@ func (x *SubscriptionEvent_ConfigEvent) GetTimestamp() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *SubscriptionEvent_ConfigEvent) GetType() ValueType {
+	if x != nil {
+		return x.Type
+	}
+	return ValueType_VALUE_TYPE_UNKNOWN
+}
+
 var File_service_proto protoreflect.FileDescriptor
 
 const file_service_proto_rawDesc = "" +
@@ -778,16 +810,21 @@ const file_service_proto_rawDesc = "" +
 	"\x10GetConfigRequest\x12\x1d\n" +
 	"\n" +
 	"service_id\x18\x01 \x01(\tR\tserviceId\x12\x18\n" +
-	"\aversion\x18\x02 \x01(\tR\aversion\"\x8c\x02\n" +
-	"\x11GetConfigResponse\x12G\n" +
-	"\aentries\x18\x01 \x03(\v2-.konfigo.client.GetConfigResponse.ConfigEntryR\aentries\x1a\xad\x01\n" +
+	"\aversion\x18\x02 \x01(\tR\aversion\"\xf9\x02\n" +
+	"\x11GetConfigResponse\x12\x1d\n" +
+	"\n" +
+	"service_id\x18\x01 \x01(\tR\tserviceId\x12\x1d\n" +
+	"\n" +
+	"version_id\x18\x02 \x01(\tR\tversionId\x12G\n" +
+	"\aentries\x18\x03 \x03(\v2-.konfigo.client.GetConfigResponse.ConfigEntryR\aentries\x1a\xdc\x01\n" +
 	"\vConfigEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x122\n" +
 	"\x05value\x18\x02 \x01(\v2\x1c.google.protobuf.StringValueR\x05value\x12\x1e\n" +
 	"\n" +
 	"generation\x18\x03 \x01(\x05R\n" +
 	"generation\x128\n" +
-	"\ttimestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\"P\n" +
+	"\ttimestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12-\n" +
+	"\x04type\x18\x05 \x01(\x0e2\x19.konfigo.client.ValueTypeR\x04type\"P\n" +
 	"\x15IsVersionExistRequest\x12\x1d\n" +
 	"\n" +
 	"service_id\x18\x01 \x01(\tR\tserviceId\x12\x18\n" +
@@ -822,16 +859,17 @@ const file_service_proto_rawDesc = "" +
 	"service_id\x18\x01 \x01(\tR\tserviceId\x12\x1d\n" +
 	"\n" +
 	"version_id\x18\x02 \x01(\tR\tversionId\x128\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\"\x8a\x02\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\"\xb9\x02\n" +
 	"\x11SubscriptionEvent\x12E\n" +
-	"\x06events\x18\x01 \x03(\v2-.konfigo.client.SubscriptionEvent.ConfigEventR\x06events\x1a\xad\x01\n" +
+	"\x06events\x18\x01 \x03(\v2-.konfigo.client.SubscriptionEvent.ConfigEventR\x06events\x1a\xdc\x01\n" +
 	"\vConfigEvent\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x122\n" +
 	"\x05value\x18\x02 \x01(\v2\x1c.google.protobuf.StringValueR\x05value\x12\x1e\n" +
 	"\n" +
 	"generation\x18\x03 \x01(\x05R\n" +
 	"generation\x128\n" +
-	"\ttimestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp*\xdd\x01\n" +
+	"\ttimestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12-\n" +
+	"\x04type\x18\x05 \x01(\x0e2\x19.konfigo.client.ValueTypeR\x04type*\xdd\x01\n" +
 	"\tValueType\x12\x16\n" +
 	"\x12VALUE_TYPE_UNKNOWN\x10\x00\x12\x15\n" +
 	"\x11VALUE_TYPE_STRING\x10\x01\x12\x16\n" +
@@ -887,27 +925,29 @@ var file_service_proto_depIdxs = []int32{
 	12, // 4: konfigo.client.SubscriptionEvent.events:type_name -> konfigo.client.SubscriptionEvent.ConfigEvent
 	13, // 5: konfigo.client.GetConfigResponse.ConfigEntry.value:type_name -> google.protobuf.StringValue
 	14, // 6: konfigo.client.GetConfigResponse.ConfigEntry.timestamp:type_name -> google.protobuf.Timestamp
-	13, // 7: konfigo.client.CreateVersionRequest.ClassEntry.description:type_name -> google.protobuf.StringValue
-	11, // 8: konfigo.client.CreateVersionRequest.ClassEntry.entries:type_name -> konfigo.client.CreateVersionRequest.ClassEntry.ConfigEntry
-	13, // 9: konfigo.client.CreateVersionRequest.ClassEntry.ConfigEntry.description:type_name -> google.protobuf.StringValue
-	0,  // 10: konfigo.client.CreateVersionRequest.ClassEntry.ConfigEntry.value_type:type_name -> konfigo.client.ValueType
-	13, // 11: konfigo.client.CreateVersionRequest.ClassEntry.ConfigEntry.enum_values:type_name -> google.protobuf.StringValue
-	13, // 12: konfigo.client.CreateVersionRequest.ClassEntry.ConfigEntry.value:type_name -> google.protobuf.StringValue
-	13, // 13: konfigo.client.SubscriptionEvent.ConfigEvent.value:type_name -> google.protobuf.StringValue
-	14, // 14: konfigo.client.SubscriptionEvent.ConfigEvent.timestamp:type_name -> google.protobuf.Timestamp
-	1,  // 15: konfigo.client.RealtimeConfigGrpcService.GetConfig:input_type -> konfigo.client.GetConfigRequest
-	3,  // 16: konfigo.client.RealtimeConfigGrpcService.IsVersionExists:input_type -> konfigo.client.IsVersionExistRequest
-	5,  // 17: konfigo.client.RealtimeConfigGrpcService.CreateVersion:input_type -> konfigo.client.CreateVersionRequest
-	7,  // 18: konfigo.client.RealtimeConfigGrpcService.StartSubscribe:input_type -> konfigo.client.StartSubscribeRequest
-	2,  // 19: konfigo.client.RealtimeConfigGrpcService.GetConfig:output_type -> konfigo.client.GetConfigResponse
-	4,  // 20: konfigo.client.RealtimeConfigGrpcService.IsVersionExists:output_type -> konfigo.client.IsVersionExistResponse
-	6,  // 21: konfigo.client.RealtimeConfigGrpcService.CreateVersion:output_type -> konfigo.client.CreateVersionResponse
-	8,  // 22: konfigo.client.RealtimeConfigGrpcService.StartSubscribe:output_type -> konfigo.client.SubscriptionEvent
-	19, // [19:23] is the sub-list for method output_type
-	15, // [15:19] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	0,  // 7: konfigo.client.GetConfigResponse.ConfigEntry.type:type_name -> konfigo.client.ValueType
+	13, // 8: konfigo.client.CreateVersionRequest.ClassEntry.description:type_name -> google.protobuf.StringValue
+	11, // 9: konfigo.client.CreateVersionRequest.ClassEntry.entries:type_name -> konfigo.client.CreateVersionRequest.ClassEntry.ConfigEntry
+	13, // 10: konfigo.client.CreateVersionRequest.ClassEntry.ConfigEntry.description:type_name -> google.protobuf.StringValue
+	0,  // 11: konfigo.client.CreateVersionRequest.ClassEntry.ConfigEntry.value_type:type_name -> konfigo.client.ValueType
+	13, // 12: konfigo.client.CreateVersionRequest.ClassEntry.ConfigEntry.enum_values:type_name -> google.protobuf.StringValue
+	13, // 13: konfigo.client.CreateVersionRequest.ClassEntry.ConfigEntry.value:type_name -> google.protobuf.StringValue
+	13, // 14: konfigo.client.SubscriptionEvent.ConfigEvent.value:type_name -> google.protobuf.StringValue
+	14, // 15: konfigo.client.SubscriptionEvent.ConfigEvent.timestamp:type_name -> google.protobuf.Timestamp
+	0,  // 16: konfigo.client.SubscriptionEvent.ConfigEvent.type:type_name -> konfigo.client.ValueType
+	1,  // 17: konfigo.client.RealtimeConfigGrpcService.GetConfig:input_type -> konfigo.client.GetConfigRequest
+	3,  // 18: konfigo.client.RealtimeConfigGrpcService.IsVersionExists:input_type -> konfigo.client.IsVersionExistRequest
+	5,  // 19: konfigo.client.RealtimeConfigGrpcService.CreateVersion:input_type -> konfigo.client.CreateVersionRequest
+	7,  // 20: konfigo.client.RealtimeConfigGrpcService.StartSubscribe:input_type -> konfigo.client.StartSubscribeRequest
+	2,  // 21: konfigo.client.RealtimeConfigGrpcService.GetConfig:output_type -> konfigo.client.GetConfigResponse
+	4,  // 22: konfigo.client.RealtimeConfigGrpcService.IsVersionExists:output_type -> konfigo.client.IsVersionExistResponse
+	6,  // 23: konfigo.client.RealtimeConfigGrpcService.CreateVersion:output_type -> konfigo.client.CreateVersionResponse
+	8,  // 24: konfigo.client.RealtimeConfigGrpcService.StartSubscribe:output_type -> konfigo.client.SubscriptionEvent
+	21, // [21:25] is the sub-list for method output_type
+	17, // [17:21] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_service_proto_init() }

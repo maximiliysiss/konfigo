@@ -18,13 +18,16 @@ message GetConfigRequest {
 }
 
 message GetConfigResponse {
-  repeated ConfigEntry entries = 1;
+  string service_id = 1;
+  string version_id = 2;
+  repeated ConfigEntry entries = 3;
 
   message ConfigEntry {
     string key = 1;
     google.protobuf.StringValue value = 2;
     int32 generation = 3;
     google.protobuf.Timestamp timestamp = 4;
+    ValueType type = 5;
   }
 }
 
@@ -76,6 +79,7 @@ message SubscriptionEvent {
     google.protobuf.StringValue value = 2;
     int32 generation = 3;
     google.protobuf.Timestamp timestamp = 4;
+    ValueType type = 5;
   }
 }
 

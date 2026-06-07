@@ -69,6 +69,7 @@ func (t *GrpcTransport) GetConfig(ctx context.Context, serviceID, version string
 		entries = append(entries, ConfigEntry{
 			Key:        entry.GetKey(),
 			Value:      unwrapString(entry.GetValue()),
+			Type:       ValueType(entry.GetType()),
 			Generation: entry.GetGeneration(),
 			Timestamp:  entry.GetTimestamp().AsTime(),
 		})
@@ -91,6 +92,7 @@ func (s *grpcSubscriptionStream) Recv() (SubscriptionEvent, error) {
 		entries = append(entries, ConfigEntry{
 			Key:        item.GetKey(),
 			Value:      unwrapString(item.GetValue()),
+			Type:       ValueType(item.GetType()),
 			Generation: item.GetGeneration(),
 			Timestamp:  item.GetTimestamp().AsTime(),
 		})

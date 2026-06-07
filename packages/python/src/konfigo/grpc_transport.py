@@ -12,6 +12,7 @@ from konfigo.models import (
     IsVersionExistResponse,
     StartSubscribeRequest,
     SubscriptionEvent,
+    ValueType,
 )
 
 
@@ -50,6 +51,10 @@ class GrpcRealtimeConfigTransport:
         response = await self._stub.CreateVersion(_map_create_version_request(self._pb, request))
         return CreateVersionResponse(version_id=response.version_id)
 
+    async def get_config(self, service_id: str, version: str) -> tuple[ConfigEntry, ...]:
+        response = await self._stub.GetConfig(self._pb.GetConfigRequest(service_id=service_id, version=version))
+        return tuple(_map_config_entry(item) for item in response.entries)
+
     async def start_subscribe(self, request: StartSubscribeRequest) -> AsyncIterator[SubscriptionEvent]:
         stream = self._stub.StartSubscribe(
             self._pb.StartSubscribeRequest(
@@ -60,15 +65,7 @@ class GrpcRealtimeConfigTransport:
         )
         async for event in stream:
             yield SubscriptionEvent(
-                events=tuple(
-                    ConfigEntry(
-                        key=item.key,
-                        value=_unwrap_string(item.value),
-                        generation=item.generation,
-                        timestamp=_from_timestamp(item.timestamp),
-                    )
-                    for item in event.events
-                )
+                events=tuple(_map_config_entry(item) for item in event.events)
             )
 
 
@@ -89,6 +86,16 @@ def _map_create_version_request(pb: Any, request: CreateVersionRequest) -> Any:
                 value=_wrap_string(pb, option.default_value),
             )
     return result
+
+
+def _map_config_entry(item: Any) -> ConfigEntry:
+    return ConfigEntry(
+        key=item.key,
+        value=_unwrap_string(item.value),
+        type=ValueType(item.type),
+        generation=item.generation,
+        timestamp=_from_timestamp(item.timestamp),
+    )
 
 
 def _wrap_string(pb: Any, value: str | None) -> Any:

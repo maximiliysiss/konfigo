@@ -16,7 +16,7 @@ from konfigo.models import (
     VersionId,
 )
 from konfigo.store import RealtimeConfigStore
-from konfigo.transport import RealtimeConfigTransport
+from konfigo.transport import InitialConfigTransport, RealtimeConfigTransport
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +90,22 @@ class KonfigoClient:
     ) -> "KonfigoClient":
         store = RealtimeConfigStore(initial_entries)
         return cls(options=options, transport=transport, definitions=definitions, store=store)
+
+    @classmethod
+    async def create_from_remote(
+        cls,
+        *,
+        options: RealtimeConfigOptions,
+        transport: InitialConfigTransport,
+        definitions: tuple[ClassDefinition, ...],
+    ) -> "KonfigoClient":
+        initial_entries = await transport.get_config(options.service_id, options.version)
+        return await cls.create(
+            options=options,
+            transport=transport,
+            definitions=definitions,
+            initial_entries=initial_entries,
+        )
 
     async def close_task(self, task: asyncio.Task[None]) -> None:
         task.cancel()

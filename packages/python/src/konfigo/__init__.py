@@ -21,7 +21,7 @@ from konfigo.models import (
     VersionId,
 )
 from konfigo.store import RealtimeConfigStore
-from konfigo.transport import RealtimeConfigTransport
+from konfigo.transport import InitialConfigTransport, RealtimeConfigTransport
 
 __all__ = [
     "ClassDefinition",
@@ -31,6 +31,7 @@ __all__ = [
     "CreateVersionResponse",
     "IsVersionExistRequest",
     "IsVersionExistResponse",
+    "InitialConfigTransport",
     "KonfigoClient",
     "OptionDefinition",
     "RealtimeConfigOptions",

@@ -32,6 +32,7 @@ class FakeTransport:
         self.created: CreateVersionRequest | None = None
         self.version_id: str | None = None
         self.events: asyncio.Queue[SubscriptionEvent] = asyncio.Queue()
+        self.initial_entries: tuple[ConfigEntry, ...] = ()
 
     async def is_version_exists(self, request: IsVersionExistRequest) -> IsVersionExistResponse:
         return IsVersionExistResponse(version_id=self.version_id)
@@ -43,6 +44,9 @@ class FakeTransport:
     async def start_subscribe(self, request: StartSubscribeRequest) -> AsyncIterator[SubscriptionEvent]:
         while True:
             yield await self.events.get()
+
+    async def get_config(self, service_id: str, version: str) -> tuple[ConfigEntry, ...]:
+        return self.initial_entries
 
 
 async def test_ensure_version_creates_when_missing():
@@ -86,3 +90,18 @@ async def test_watch_forever_filters_initial_generation_and_applies_updates():
     await client.close_task(task)
 
     assert client.store.get("ChangedOptions:value") == "44"
+
+
+async def test_create_from_remote_loads_initial_entries():
+    transport = FakeTransport()
+    transport.initial_entries = (
+        ConfigEntry("ChangedOptions:value", "42", 1, datetime.now(timezone.utc)),
+    )
+
+    client = await KonfigoClient.create_from_remote(
+        options=RealtimeConfigOptions(is_enabled=True, service_id="orders", version="1.0.0"),
+        transport=transport,
+        definitions=discover_definitions(ChangedOptions),
+    )
+
+    assert client.store.get("ChangedOptions:value") == "42"
