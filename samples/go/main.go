@@ -30,7 +30,7 @@ func main() {
 
 	grpcURL := env("KONFIGO_GRPC_URL", "localhost:8081")
 	serviceID := env("KONFIGO_SERVICE_ID", "f89f7a09-d71d-459d-b02c-07213ed0eaa4")
-	version := env("KONFIGO_VERSION", "1.0.13")
+	version := env("KONFIGO_VERSION", "1.0.14")
 	httpAddr := env("HTTP_ADDR", ":8088")
 
 	definitions, err := konfigo.DiscoverDefinitions(PaymentsOptions{})

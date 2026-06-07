@@ -47,7 +47,7 @@ class PaymentsOptions:
 async def main() -> None:
     grpc_url = os.getenv("KONFIGO_GRPC_URL", "localhost:8081")
     service_id = os.getenv("KONFIGO_SERVICE_ID", "f89f7a09-d71d-459d-b02c-07213ed0eaa4")
-    version = os.getenv("KONFIGO_VERSION", "1.0.13")
+    version = os.getenv("KONFIGO_VERSION", "1.0.16")
     http_addr = os.getenv("HTTP_ADDR", "127.0.0.1:8089")
 
     options = RealtimeConfigOptions(
