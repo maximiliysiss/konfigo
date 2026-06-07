@@ -1,4 +1,5 @@
 import { PUBLIC_API_URL } from '$env/static/public';
+import { showAuthUnavailable } from '$lib/stores/availability';
 
 const defaultApiBaseUrl = '/api';
 
@@ -83,10 +84,9 @@ export function isAuthRedirectResponse(response: Response): boolean {
 	return response.type === 'opaqueredirect' || response.redirected || (response.status >= 300 && response.status < 400);
 }
 
-export function redirectToLogin(): never {
-	const returnUrl = window.location.pathname + window.location.search;
-	window.location.assign(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
-	throw new Error('Unauthorized');
+export function markAuthUnavailable(status = 401): never {
+	showAuthUnavailable(status);
+	throw new Error('Access unavailable');
 }
 
 export function buildUrl(path: string): string {
@@ -125,11 +125,11 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
 	});
 
 	if (response.status === 401 || isAuthRedirectResponse(response)) {
-		redirectToLogin();
+		markAuthUnavailable(response.status || 401);
 	}
 
 	if (response.status === 403) {
-		throw new Error('Forbidden');
+		throw new Error('Forbidden: you do not have permission to perform this action.');
 	}
 
 	if (!response.ok) {

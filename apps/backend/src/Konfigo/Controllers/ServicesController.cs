@@ -89,9 +89,12 @@ public sealed class ServicesController : ControllerBase
             .SingleOrDefaultAsync(cancellationToken);
 
         if (service is null)
+        {
             _logger.LogApplicationServiceNotFound(id);
-        else
-            _logger.LogApplicationServiceGetByIdCompleted(service.Id, service.Name);
+            return service;
+        }
+
+        _logger.LogApplicationServiceGetByIdCompleted(service.Id, service.Name);
 
         return service;
     }

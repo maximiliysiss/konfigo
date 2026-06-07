@@ -7,7 +7,8 @@
 		error = '',
 		disabled = false,
 		readonly = false,
-		className = ''
+		className = '',
+		oninput
 	} = $props<{
 		id?: string;
 		label?: string;
@@ -17,6 +18,7 @@
 		disabled?: boolean;
 		readonly?: boolean;
 		className?: string;
+		oninput?: (event: Event) => void;
 	}>();
 </script>
 
@@ -33,6 +35,7 @@
 		{disabled}
 		{readonly}
 		bind:value
+		{oninput}
 	></textarea>
 	{#if error}
 		<span class="block text-[12px] text-[var(--danger)]">{error}</span>

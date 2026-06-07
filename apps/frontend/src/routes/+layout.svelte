@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import '../app.css';
 	import { buildBackendUrl } from '$lib/api';
+	import { authAvailabilityIssue, clearAuthUnavailable } from '$lib/stores/availability';
 	import { canAll, user, type AuthUser } from '$lib/stores/auth';
 	import { consumeQueuedToast, toasts } from '$lib/stores/toast';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -69,6 +70,32 @@
 	<link rel="apple-touch-icon" href="/app-icon.png" />
 	<title>Konfigo</title>
 </svelte:head>
+
+{#if !data.connectionError && $authAvailabilityIssue}
+	<div class="global-status-banner" role="status" aria-live="polite">
+		<div class="global-status-content">
+			<div class="global-status-icon" aria-hidden="true">
+				<svg viewBox="0 0 16 16" class="h-4 w-4" fill="none">
+					<path d="M8 5.5v3M8 11h.01M6.8 2.7 2.1 11a1.6 1.6 0 0 0 1.4 2.4h9a1.6 1.6 0 0 0 1.4-2.4L9.2 2.7a1.4 1.4 0 0 0-2.4 0Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+				</svg>
+			</div>
+			<div class="global-status-copy">
+				<p class="global-status-title">Konfigo is unavailable</p>
+				<p class="global-status-message">
+					{$authAvailabilityIssue.message}
+					{#if $authAvailabilityIssue.status}
+						<span>HTTP {$authAvailabilityIssue.status}.</span>
+					{/if}
+				</p>
+			</div>
+			<button class="global-status-dismiss" type="button" aria-label="Dismiss" onclick={clearAuthUnavailable}>
+				<svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" aria-hidden="true">
+					<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+				</svg>
+			</button>
+		</div>
+	</div>
+{/if}
 
 {#if data.connectionError}
 	<div class="connection-background">

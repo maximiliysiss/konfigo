@@ -1,4 +1,5 @@
 using Konfigo.Application.Extensions;
+using Konfigo.Authorization;
 using Konfigo.Extensions;
 using Konfigo.Grpc;
 using Konfigo.Hubs;
@@ -16,7 +17,7 @@ public sealed class Startup(IConfiguration configuration)
     public void ConfigureServices(IServiceCollection services)
     {
         services
-            .AddControllers();
+            .AddControllers(opt => opt.Filters.Add<ServiceAccessActionFilter>());
 
         services
             .AddOpenApi();

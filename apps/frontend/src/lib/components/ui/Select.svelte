@@ -6,6 +6,7 @@
 		error = '',
 		disabled = false,
 		className = '',
+		onchange,
 		children
 	} = $props<{
 		id?: string;
@@ -14,6 +15,7 @@
 		error?: string;
 		disabled?: boolean;
 		className?: string;
+		onchange?: (event: Event) => void;
 		children?: import('svelte').Snippet;
 	}>();
 </script>
@@ -32,6 +34,7 @@
 			{id}
 			{disabled}
 			bind:value
+			{onchange}
 		>
 			{@render children?.()}
 		</select>

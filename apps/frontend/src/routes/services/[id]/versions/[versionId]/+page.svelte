@@ -75,6 +75,9 @@
 	let error = $state('');
 	let entriesError = $state('');
 	let actionError = $state('');
+	let formValueError = $state('');
+	let inlineValueError = $state('');
+	let pendingEntryErrors = $state<Record<string, string>>({});
 	let audit = $state<AuditEntry[]>([]);
 	let auditPage = $state(1);
 	let auditPageSize = 10;
@@ -306,15 +309,19 @@
 		const normalized = String(rawValue ?? '');
 		const original = entryRawValue(entry);
 		const next = { ...pendingValues };
+		const nextErrors = { ...pendingEntryErrors };
 
 		if (normalized === original) delete next[entry.id];
 		else next[entry.id] = normalized;
+		delete nextErrors[entry.id];
 
 		pendingValues = next;
+		pendingEntryErrors = nextErrors;
 	}
 
 	function discardPendingChanges() {
 		pendingValues = {};
+		pendingEntryErrors = {};
 		showOnlyChanged = false;
 		cancelInlineEdit();
 	}
@@ -370,26 +377,32 @@
 	}
 
 	function addFormArrayItem() {
+		formValueError = '';
 		formArrayItems = [...formArrayItems, ''];
 	}
 
 	function updateFormArrayItem(index: number, value: string) {
+		formValueError = '';
 		formArrayItems = formArrayItems.map((item, itemIndex) => (itemIndex === index ? value : item));
 	}
 
 	function removeFormArrayItem(index: number) {
+		formValueError = '';
 		formArrayItems = formArrayItems.filter((_, itemIndex) => itemIndex !== index);
 	}
 
 	function addInlineArrayItem() {
+		inlineValueError = '';
 		inlineArrayItems = [...inlineArrayItems, ''];
 	}
 
 	function updateInlineArrayItem(index: number, value: string) {
+		inlineValueError = '';
 		inlineArrayItems = inlineArrayItems.map((item, itemIndex) => (itemIndex === index ? value : item));
 	}
 
 	function removeInlineArrayItem(index: number) {
+		inlineValueError = '';
 		inlineArrayItems = inlineArrayItems.filter((_, itemIndex) => itemIndex !== index);
 	}
 
@@ -473,6 +486,7 @@
 		formGroupName = normalizedGroupName(groupName);
 		formGroupDescription = knownGroups.find((group) => group.name === formGroupName)?.description ?? '';
 		actionError = '';
+		formValueError = '';
 	}
 
 	function openCreatePanel(groupName = '') {
@@ -496,6 +510,7 @@
 		formGroupName = normalizedGroupName(entry.groupName);
 		formGroupDescription = entry.groupDescription?.trim() ?? knownGroups.find((g) => g.name === formGroupName)?.description ?? '';
 		actionError = '';
+		formValueError = '';
 		showPanel = true;
 	}
 
@@ -783,10 +798,11 @@
 
 	async function savePanel() {
 		actionError = '';
+		formValueError = '';
 		const rawForSave = formValueType === CONFIG_VALUE_TYPE.Array ? serializeArrayItems(formArrayItems) : formRawValue;
 		const validation = validateValue(formValueType, rawForSave, formEnumDefinition);
 		if (validation) {
-			actionError = validation;
+			formValueError = validation;
 			return;
 		}
 
@@ -877,12 +893,14 @@
 			? normalizeBooleanValue(getEntryValue(entry) || 'false')
 			: getEntryValue(entry);
 		inlineArrayItems = isArrayValueType(entry.valueType) ? parseArrayItems(getEntryValue(entry)) : [];
+		inlineValueError = pendingEntryErrors[entry.id] ?? '';
 	}
 
 	function cancelInlineEdit() {
 		inlineId = '';
 		inlineValue = '';
 		inlineArrayItems = [];
+		inlineValueError = '';
 	}
 
 	function saveInline(entry: ConfigEntry) {
@@ -891,11 +909,14 @@
 		const rawForSave = type === CONFIG_VALUE_TYPE.Array ? serializeArrayItems(inlineArrayItems) : inlineValue;
 		const validation = validateValue(type, rawForSave, entry.enumDefinition ?? '');
 		if (validation) {
-			actionError = validation;
+			actionError = '';
+			inlineValueError = validation;
+			pendingEntryErrors = { ...pendingEntryErrors, [entry.id]: validation };
 			return;
 		}
 
 		actionError = '';
+		inlineValueError = '';
 		setPendingValue(entry, String(normalizeRawValueForSave(rawForSave, type)));
 		cancelInlineEdit();
 	}
@@ -904,11 +925,13 @@
 		if (!canBatchSave) return;
 
 		actionError = '';
+		pendingEntryErrors = {};
 		for (const entry of pendingEntries) {
 			const type = normalizeValueType(entry.valueType);
 			const validation = validateValue(type, getEntryValue(entry), entry.enumDefinition ?? '');
 			if (validation) {
-				actionError = `${entry.key}: ${validation}`;
+				pendingEntryErrors = { [entry.id]: validation };
+				if (inlineId === entry.id) inlineValueError = validation;
 				return;
 			}
 		}
@@ -930,6 +953,7 @@
 				upsertLocalEntry(entry);
 			}
 			pendingValues = {};
+			pendingEntryErrors = {};
 			showOnlyChanged = false;
 			cancelInlineEdit();
 			pushToast('Config changes saved');
@@ -1041,6 +1065,7 @@
 		if (formValueType === CONFIG_VALUE_TYPE.Array && formArrayItems.length === 0) {
 			formArrayItems = [''];
 		}
+		formValueError = '';
 	});
 </script>
 
@@ -1188,9 +1213,9 @@
 			<div class="h-52 animate-pulse rounded-[12px] border border-[var(--border)] bg-[var(--bg-surface)]"></div>
 		</div>
 	{:else if error}
-		<p class="text-[13px] text-[var(--danger)]">{error}</p>
+		<div class="error-callout">{error}</div>
 	{:else if entriesError}
-		<p class="text-[13px] text-[var(--danger)]">{entriesError}</p>
+		<div class="error-callout">{entriesError}</div>
 	{:else if groupedEntries.length === 0}
 		<EmptyState title={showOnlyChanged ? 'No changed config entries' : 'No config entries yet'} description={showOnlyChanged ? 'Change values first, then enable this filter to review them before saving.' : 'Create the first key for this version or let the SDK register missing keys automatically.'}>
 			{#snippet icon()}
@@ -1290,19 +1315,27 @@
 																<Button variant="ghost" size="sm" onclick={cancelInlineEdit}>✕</Button>
 															</div>
 														{:else if normalizeValueType(entry.valueType) === CONFIG_VALUE_TYPE.Json}
-															<div class="flex items-start gap-2">
-																<textarea
-																	class="min-h-24 w-full rounded-[8px] border border-[var(--accent)] bg-[var(--bg-surface)] px-3 py-2 mono text-[13px] outline-none"
-																	bind:value={inlineValue}
-																	onkeydown={(e) => {
-																		if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') saveInline(entry);
-																		if (e.key === 'Escape') cancelInlineEdit();
-																	}}
-																></textarea>
-																<div class="flex flex-col gap-2">
-																	<Button variant="secondary" size="sm" onclick={() => saveInline(entry)}>✓</Button>
-																	<Button variant="ghost" size="sm" onclick={cancelInlineEdit}>✕</Button>
+															<div class="space-y-1.5">
+																<div class="flex items-start gap-2">
+																	<textarea
+																		class={`min-h-24 w-full rounded-[8px] border bg-[var(--bg-surface)] px-3 py-2 mono text-[13px] outline-none ${inlineValueError ? 'border-[var(--danger)]' : 'border-[var(--accent)]'}`}
+																		bind:value={inlineValue}
+																		oninput={() => {
+																			inlineValueError = '';
+																		}}
+																		onkeydown={(e) => {
+																			if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') saveInline(entry);
+																			if (e.key === 'Escape') cancelInlineEdit();
+																		}}
+																	></textarea>
+																	<div class="flex flex-col gap-2">
+																		<Button variant="secondary" size="sm" onclick={() => saveInline(entry)}>✓</Button>
+																		<Button variant="ghost" size="sm" onclick={cancelInlineEdit}>✕</Button>
+																	</div>
 																</div>
+																{#if inlineValueError}
+																	<p class="field-error">{inlineValueError}</p>
+																{/if}
 															</div>
 														{:else if isArrayValueType(entry.valueType)}
 															<div class="array-editor array-editor-inline">
@@ -1332,25 +1365,36 @@
 																	<Button variant="secondary" size="sm" onclick={() => saveInline(entry)}>✓</Button>
 																	<Button variant="ghost" size="sm" onclick={cancelInlineEdit}>✕</Button>
 																</div>
+																{#if inlineValueError}
+																	<p class="field-error">{inlineValueError}</p>
+																{/if}
 															</div>
 														{:else}
-															<div class="flex items-center gap-2">
-																<input
-																	class="h-9 w-full rounded-[8px] border border-[var(--accent)] bg-[var(--bg-surface)] px-3 mono text-[13px] outline-none"
-																	type="text"
-																	inputmode={normalizeValueType(entry.valueType) === CONFIG_VALUE_TYPE.Number ? 'decimal' : undefined}
-																	pattern={normalizeValueType(entry.valueType) === CONFIG_VALUE_TYPE.Number ? '[0-9]*\\.?[0-9]*' : undefined}
-																	placeholder={normalizeValueType(entry.valueType) === CONFIG_VALUE_TYPE.Number ? 'e.g. 42 or 3.14' : undefined}
-																	bind:value={inlineValue}
-																	onkeydown={(e) => {
-																		if (e.key === 'Enter') saveInline(entry);
-																		if (e.key === 'Escape') cancelInlineEdit();
-																	}}
-																/>
-																<Button variant="secondary" size="sm" onclick={() => saveInline(entry)}>
-																	✓
-																</Button>
-																<Button variant="ghost" size="sm" onclick={cancelInlineEdit}>✕</Button>
+															<div class="space-y-1.5">
+																<div class="flex items-center gap-2">
+																	<input
+																		class={`h-9 w-full rounded-[8px] border bg-[var(--bg-surface)] px-3 mono text-[13px] outline-none ${inlineValueError ? 'border-[var(--danger)]' : 'border-[var(--accent)]'}`}
+																		type="text"
+																		inputmode={normalizeValueType(entry.valueType) === CONFIG_VALUE_TYPE.Number ? 'decimal' : undefined}
+																		pattern={normalizeValueType(entry.valueType) === CONFIG_VALUE_TYPE.Number ? '[0-9]*\\.?[0-9]*' : undefined}
+																		placeholder={normalizeValueType(entry.valueType) === CONFIG_VALUE_TYPE.Number ? 'e.g. 42 or 3.14' : undefined}
+																		bind:value={inlineValue}
+																		oninput={() => {
+																			inlineValueError = '';
+																		}}
+																		onkeydown={(e) => {
+																			if (e.key === 'Enter') saveInline(entry);
+																			if (e.key === 'Escape') cancelInlineEdit();
+																		}}
+																	/>
+																	<Button variant="secondary" size="sm" onclick={() => saveInline(entry)}>
+																		✓
+																	</Button>
+																	<Button variant="ghost" size="sm" onclick={cancelInlineEdit}>✕</Button>
+																</div>
+																{#if inlineValueError}
+																	<p class="field-error">{inlineValueError}</p>
+																{/if}
 															</div>
 														{/if}
 													{:else}
@@ -1404,6 +1448,9 @@
 															>
 																<span class="block max-w-[340px] truncate">{getEntryValue(entry) || '-'}</span>
 															</button>
+														{/if}
+														{#if pendingEntryErrors[entry.id]}
+															<p class="field-error mt-1">{pendingEntryErrors[entry.id]}</p>
 														{/if}
 													{/if}
 												</td>
@@ -1517,7 +1564,7 @@
 		</div>
 
 		{#if actionError}
-			<p class="text-[13px] text-[var(--danger)]">{actionError}</p>
+			<div class="error-callout">{actionError}</div>
 		{/if}
 	</section>
 
@@ -1601,11 +1648,23 @@
 		{/if}
 
 		{#if formValueType === CONFIG_VALUE_TYPE.String}
-			<Input label="Value" bind:value={formRawValue} className="mono" />
+			<Input
+				label="Value"
+				bind:value={formRawValue}
+				error={formValueError}
+				className="mono"
+				oninput={() => {
+					formValueError = '';
+				}}
+			/>
 		{:else if formValueType === CONFIG_VALUE_TYPE.Number}
 			<label class="block space-y-1.5 mono">
 				<span class="block text-[13px] text-[var(--text-secondary)]">Value</span>
-				<span class="flex h-9 items-center gap-2 rounded-[8px] border border-[var(--border)] bg-[var(--bg-surface)] px-3 transition-all duration-150 focus-within:border-[var(--accent)]">
+				<span
+					class={`flex h-9 items-center gap-2 rounded-[8px] border bg-[var(--bg-surface)] px-3 transition-all duration-150 focus-within:border-[var(--accent)] ${
+						formValueError ? 'border-[var(--danger)]' : 'border-[var(--border)]'
+					}`}
+				>
 					<input
 						class="w-full border-0 bg-transparent p-0 text-[14px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
 						type="text"
@@ -1613,11 +1672,17 @@
 						pattern="[0-9]*\.?[0-9]*"
 						placeholder="e.g. 42 or 3.14"
 						bind:value={formRawValue}
+						oninput={() => {
+							formValueError = '';
+						}}
 						onkeydown={(e) => {
 							if (e.key === 'Enter') void savePanel();
 						}}
 					/>
 				</span>
+				{#if formValueError}
+					<span class="field-error">{formValueError}</span>
+				{/if}
 			</label>
 		{:else if formValueType === CONFIG_VALUE_TYPE.Boolean}
 			<div class="space-y-1.5">
@@ -1637,15 +1702,42 @@
 				</label>
 			</div>
 		{:else if formValueType === CONFIG_VALUE_TYPE.DateTime}
-			<Input label="Value" type="datetime-local" bind:value={formRawValue} className="mono" />
+			<Input
+				label="Value"
+				type="datetime-local"
+				bind:value={formRawValue}
+				error={formValueError}
+				className="mono"
+				oninput={() => {
+					formValueError = '';
+				}}
+			/>
 		{:else if formValueType === CONFIG_VALUE_TYPE.TimeSpan}
-			<Input label="Value" placeholder="HH:mm:ss" bind:value={formRawValue} className="mono" />
+			<Input
+				label="Value"
+				placeholder="HH:mm:ss"
+				bind:value={formRawValue}
+				error={formValueError}
+				className="mono"
+				oninput={() => {
+					formValueError = '';
+				}}
+			/>
 		{:else if formValueType === CONFIG_VALUE_TYPE.Json}
-			<Textarea label="Value" placeholder={`{"key":"value"}`} bind:value={formRawValue} className="mono" />
+			<Textarea
+				label="Value"
+				placeholder={`{"key":"value"}`}
+				bind:value={formRawValue}
+				error={formValueError}
+				className="mono"
+				oninput={() => {
+					formValueError = '';
+				}}
+			/>
 		{:else if formValueType === CONFIG_VALUE_TYPE.Array}
 			<div class="space-y-1.5">
 				<span class="block text-[13px] text-[var(--text-secondary)]">Value</span>
-				<div class="array-editor">
+				<div class={`array-editor ${formValueError ? 'array-editor-error' : ''}`}>
 					<div class="space-y-2">
 						{#each formArrayItems as item, index}
 							<div class="array-row">
@@ -1667,11 +1759,21 @@
 						<Button variant="secondary" size="sm" onclick={addFormArrayItem}>Add row</Button>
 					</div>
 				</div>
+				{#if formValueError}
+					<span class="field-error">{formValueError}</span>
+				{/if}
 			</div>
 		{:else if formValueType === CONFIG_VALUE_TYPE.Enum}
 			<div class="space-y-5">
 				{#if enumValues().length > 0}
-					<Select label="Value" bind:value={formRawValue}>
+					<Select
+						label="Value"
+						bind:value={formRawValue}
+						error={formValueError}
+						onchange={() => {
+							formValueError = '';
+						}}
+					>
 						<option value="">Select value</option>
 						{#each enumValues() as val}
 							<option value={val}>{val}</option>
@@ -1681,7 +1783,15 @@
 					<div class="rounded-[10px] border border-[var(--border)] bg-[var(--bg-subtle)] px-4 py-3 text-[13px] text-[var(--text-secondary)]">
 						No enum values defined yet — enter value manually
 					</div>
-					<Input label="Value" bind:value={formRawValue} className="mono" />
+					<Input
+						label="Value"
+						bind:value={formRawValue}
+						error={formValueError}
+						className="mono"
+						oninput={() => {
+							formValueError = '';
+						}}
+					/>
 				{/if}
 			</div>
 		{/if}
@@ -1931,8 +2041,29 @@
 		outline: none;
 	}
 
+	.array-editor-error .array-input {
+		border-color: var(--danger);
+	}
+
 	.array-input::placeholder {
 		color: var(--text-tertiary);
+	}
+
+	.field-error {
+		display: block;
+		font-size: 12px;
+		color: var(--danger);
+	}
+
+	.error-callout {
+		border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--border));
+		border-left: 4px solid var(--danger);
+		border-radius: 8px;
+		background: var(--danger-subtle);
+		padding: 10px 12px;
+		font-size: 13px;
+		font-weight: 500;
+		color: var(--danger);
 	}
 
 	.array-icon-button {
