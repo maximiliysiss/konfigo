@@ -16,19 +16,13 @@ internal sealed class ApplicationRepository(AppDbContext context) : IApplication
         IQueryable<ApplicationService> query = context.ApplicationServices;
 
         if (request.Ids is [_, ..])
-        {
             query = query.Where(x => request.Ids.Contains(x.Id));
-        }
 
         if (!string.IsNullOrWhiteSpace(request.Name))
-        {
             query = query.Where(x => x.Name.Contains(request.Name));
-        }
 
         if (request.Member is not null)
-        {
             query = query.Where(x => x.Members.Contains(request.Member.Value));
-        }
 
         query = query
             .Where(x => x.Num < request.Cursor.Num)
@@ -36,9 +30,7 @@ internal sealed class ApplicationRepository(AppDbContext context) : IApplication
             .Take(request.PageSize);
 
         if (!request.AsTracking)
-        {
             query = query.AsNoTracking();
-        }
 
         return query.AsAsyncEnumerable();
     }

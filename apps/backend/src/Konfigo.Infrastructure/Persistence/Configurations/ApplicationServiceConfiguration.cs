@@ -1,8 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Konfigo.Domain.Entities;
 using Konfigo.Domain.ValueType;
 using Konfigo.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Konfigo.Infrastructure.Persistence.Configurations;
 
@@ -26,9 +31,20 @@ internal sealed class ApplicationServiceConfiguration : IEntityTypeConfiguration
         builder.Property(x => x.RepositoryUrl).HasColumnName("repository_url");
         builder.Property(x => x.ContactEmail).HasColumnName("contact_email");
 
+        var converter = new ValueConverter<HashSet<UserId>, string[]>(
+            v => v.Select(x => x.Value).ToArray(),
+            v => v.Select(x => new UserId(x)).ToHashSet());
+
+        var comparer = new ValueComparer<HashSet<UserId>>(
+            (a, b) => a!.SetEquals(b!),
+            v => v.Aggregate(0, (h, e) => HashCode.Combine(h, e.Value.GetHashCode())),
+            v => v.ToHashSet());
+
         builder
             .Property(x => x.Members)
-            .HasColumnName("members");
+            .HasColumnName("members")
+            .HasConversion(converter, comparer)
+            .HasColumnType("text[]");
 
         builder
             .Property(x => x.Num)
