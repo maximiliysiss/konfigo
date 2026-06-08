@@ -120,10 +120,11 @@ public sealed class ConfigVersionServiceTests
         var result = await sut.GenerateAsync(request, CancellationToken.None);
 
         // Assert
-        var single = result.ConfigEntries.Single();
+        result.Should().BeOfType<Konfigo.Application.Services.Configurations.Models.GenerateResult.New>();
+        var single = result.Version.ConfigEntries.Single();
         single.RawValue.Should().Be("keep-me");
         single.Key.Should().Be("shared");
-        single.ConfigVersionId.Should().Be(result.Id);
+        single.ConfigVersionId.Should().Be(result.Version.Id);
     }
 
     [Fact]
@@ -166,9 +167,10 @@ public sealed class ConfigVersionServiceTests
         var result = await sut.GenerateAsync(request, CancellationToken.None);
 
         // Assert
-        result.ConfigEntries.Should().HaveCount(2);
-        result.ConfigEntries.Single(c => c.Key == "shared").RawValue.Should().Be("type-mismatch-uses-new");
-        result.ConfigEntries.Single(c => c.Key == "brand-new").RawValue.Should().Be("new-key-uses-new");
+        result.Should().BeOfType<Konfigo.Application.Services.Configurations.Models.GenerateResult.New>();
+        result.Version.ConfigEntries.Should().HaveCount(2);
+        result.Version.ConfigEntries.Single(c => c.Key == "shared").RawValue.Should().Be("type-mismatch-uses-new");
+        result.Version.ConfigEntries.Single(c => c.Key == "brand-new").RawValue.Should().Be("new-key-uses-new");
     }
 
     [Fact]
@@ -195,7 +197,8 @@ public sealed class ConfigVersionServiceTests
         var result = await sut.GenerateAsync(request, CancellationToken.None);
 
         // Assert
-        result.Should().BeSameAs(existingVersion);
+        result.Should().BeOfType<Konfigo.Application.Services.Configurations.Models.GenerateResult.Exists>();
+        result.Version.Should().BeSameAs(existingVersion);
         await repo.DidNotReceive().AddAsync(Arg.Any<ConfigVersion>(), Arg.Any<CancellationToken>());
     }
 
@@ -206,6 +209,9 @@ public sealed class ConfigVersionServiceTests
         var distributedLock = Substitute.For<IDistributedLock>();
         distributedLock
             .AcquireAsync(Arg.Any<TimeSpan?>(), Arg.Any<CancellationToken>())
+            .Returns(new Disposable());
+        distributedLock
+            .TryAcquireAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new Disposable());
 
         factory

@@ -100,7 +100,7 @@ public sealed class AuditConfigEntryServiceTests
         var inner = Substitute.For<IConfigEntryService>();
         var auditRepo = Substitute.For<IAuditLogRepository>();
 
-        var updatedBy = new UserDto(new UserId(Guid.NewGuid().ToString()), Roles: ["billing"]);
+        var updatedBy = new UserId(Guid.NewGuid().ToString());
         var serviceId = ServiceId.New();
         var versionId = VersionId.New();
         var request = new SetEntryRequest(
@@ -129,7 +129,7 @@ public sealed class AuditConfigEntryServiceTests
         await auditRepo.Received(1).AddAsync(
             Arg.Is<AuditLog[]>(logs =>
                 logs.Length == 2 &&
-                logs.All(l => l.UserId == updatedBy.Id) &&
+                logs.All(l => l.UserId == updatedBy) &&
                 logs.All<AuditLog>(l => l.Entry is EntrySetEntry)),
             Arg.Any<CancellationToken>());
     }

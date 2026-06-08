@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Konfigo.Application.Services.Notifications;
 using Konfigo.Authorization;
@@ -128,4 +129,5 @@ public static class ServiceCollectionExtensions
                         .AddRequirements(new ConfiguredRolesRequirement(AuthorizationPolicyNames.CanChange)));
         });
     }
+
 }

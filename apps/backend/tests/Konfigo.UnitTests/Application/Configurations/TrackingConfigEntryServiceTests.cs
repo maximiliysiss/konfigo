@@ -104,7 +104,7 @@ public sealed class TrackingConfigEntryServiceTests
             ServiceId.New(),
             VersionId.New(),
             [],
-            new UserDto(new UserId(Guid.NewGuid().ToString()), Roles: []));
+            new UserId(Guid.NewGuid().ToString()));
 
         // Act
         var result = await sut.SetAsync(request, CancellationToken.None);
@@ -127,7 +127,7 @@ public sealed class TrackingConfigEntryServiceTests
             serviceId,
             versionId,
             [new SetEntryRequest.SetRequest(EntryId.New(), "v", 1)],
-            new UserDto(new UserId(Guid.NewGuid().ToString()), Roles: ["billing"]));
+            new UserId(Guid.NewGuid().ToString()));
 
         var returned = new[]
         {

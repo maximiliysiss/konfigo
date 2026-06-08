@@ -54,9 +54,9 @@ WHERE id = :id;
     {
         const string sql = @"
 INSERT INTO public.application_services
-    (id, name, description, repository_url, contact_email, created_at, updated_at)
+    (id, name, description, repository_url, contact_email, members, created_at, updated_at)
 VALUES
-    (:id, :name, :description, :repositoryUrl, :contactEmail, :createdAt, :updatedAt);
+    (:id, :name, :description, :repositoryUrl, :contactEmail, :members, :createdAt, :updatedAt);
 ";
         _ids.Add(row.Id);
 
@@ -71,6 +71,7 @@ VALUES
                 { "description", row.Description },
                 { "repositoryUrl", row.RepositoryUrl },
                 { "contactEmail", row.ContactEmail },
+                { "members", row.Members },
                 { "createdAt", row.CreatedAt },
                 { "updatedAt", row.UpdatedAt },
             }
@@ -112,6 +113,7 @@ WHERE id = ANY(:ids);
         public string? Description { get; set; }
         public string? RepositoryUrl { get; set; }
         public string? ContactEmail { get; set; }
+        public string[] Members { get; set; } = [];
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? UpdatedAt { get; set; }
     }

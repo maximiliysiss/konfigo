@@ -5,6 +5,7 @@ using FluentAssertions;
 using Konfigo.Application.Repositories;
 using Konfigo.Application.Services.Configurations;
 using Konfigo.Application.Services.Configurations.Audit;
+using Konfigo.Application.Services.Configurations.Models;
 using Konfigo.Domain.Entities;
 using Konfigo.Domain.ValueType;
 using Konfigo.UnitTests.Support;
@@ -106,7 +107,7 @@ public sealed class AuditConfigVersionServiceTests
             TestFakes.BuildEntry(versionId: generated.Id),
         ];
         var request = TestFakes.BuildGenerateVersionRequest(serviceId: serviceId);
-        inner.GenerateAsync(request, Arg.Any<CancellationToken>()).Returns(generated);
+        inner.GenerateAsync(request, Arg.Any<CancellationToken>()).Returns(new GenerateResult.New(generated));
 
         var sut = new AuditConfigVersionService(inner, auditRepo);
 
@@ -114,7 +115,8 @@ public sealed class AuditConfigVersionServiceTests
         var result = await sut.GenerateAsync(request, CancellationToken.None);
 
         // Assert
-        result.Should().BeSameAs(generated);
+        result.Should().BeOfType<GenerateResult.New>();
+        result.Version.Should().BeSameAs(generated);
         await auditRepo.Received(1).AddAsync(
             Arg.Is<AuditLog[]>(logs =>
                 logs.Length == 4 &&

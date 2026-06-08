@@ -26,6 +26,24 @@ internal static partial class LoggerExtensions
     [LoggerMessage(EventId = 1006, Level = LogLevel.Warning, Message = "Application service not found. ServiceId: {ServiceId}")]
     public static partial void LogApplicationServiceNotFound(this ILogger logger, ServiceId serviceId);
 
+    [LoggerMessage(EventId = 1007, Level = LogLevel.Debug, Message = "Application service member add started. ServiceId: {ServiceId}, UserId: {UserId}")]
+    public static partial void LogApplicationServiceMemberAddStarted(this ILogger logger, ServiceId serviceId, UserId userId);
+
+    [LoggerMessage(EventId = 1008, Level = LogLevel.Information, Message = "Application service member added. ServiceId: {ServiceId}, UserId: {UserId}")]
+    public static partial void LogApplicationServiceMemberAdded(this ILogger logger, ServiceId serviceId, UserId userId);
+
+    [LoggerMessage(EventId = 1009, Level = LogLevel.Debug, Message = "Application service member add skipped. ServiceId: {ServiceId}, UserId: {UserId}")]
+    public static partial void LogApplicationServiceMemberAddSkipped(this ILogger logger, ServiceId serviceId, UserId userId);
+
+    [LoggerMessage(EventId = 1010, Level = LogLevel.Debug, Message = "Application service member remove started. ServiceId: {ServiceId}, UserId: {UserId}")]
+    public static partial void LogApplicationServiceMemberRemoveStarted(this ILogger logger, ServiceId serviceId, UserId userId);
+
+    [LoggerMessage(EventId = 1011, Level = LogLevel.Information, Message = "Application service member removed. ServiceId: {ServiceId}, UserId: {UserId}")]
+    public static partial void LogApplicationServiceMemberRemoved(this ILogger logger, ServiceId serviceId, UserId userId);
+
+    [LoggerMessage(EventId = 1012, Level = LogLevel.Debug, Message = "Application service member remove skipped. ServiceId: {ServiceId}, UserId: {UserId}")]
+    public static partial void LogApplicationServiceMemberRemoveSkipped(this ILogger logger, ServiceId serviceId, UserId userId);
+
     [LoggerMessage(EventId = 1100, Level = LogLevel.Debug, Message = "Config entry create started. ServiceId: {ServiceId}, VersionId: {VersionId}")]
     public static partial void LogConfigEntryCreateStarted(this ILogger logger, ServiceId serviceId, VersionId versionId);
 

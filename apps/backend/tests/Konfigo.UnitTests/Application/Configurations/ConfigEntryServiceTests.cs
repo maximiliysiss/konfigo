@@ -101,6 +101,9 @@ public sealed class ConfigEntryServiceTests
         distributedLock
             .AcquireAsync(Arg.Any<TimeSpan?>(), Arg.Any<CancellationToken>())
             .Returns(new Disposable());
+        distributedLock
+            .TryAcquireAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
+            .Returns(new Disposable());
 
         lockFactory
             .CreateLock(Arg.Any<string>())
@@ -116,7 +119,7 @@ public sealed class ConfigEntryServiceTests
         await sut.UpdateAsync(request, CancellationToken.None);
 
         // Assert
-        var expectedKey = $"{request.ServiceId}_{request.VersionId}::entry";
+        var expectedKey = $"{request.ServiceId}::{request.VersionId}::entry";
         lockFactory.Received(1).CreateLock(expectedKey);
     }
 
@@ -134,7 +137,7 @@ public sealed class ConfigEntryServiceTests
             ServiceId.New(),
             VersionId.New(),
             [new SetEntryRequest.SetRequest(EntryId.New(), "v", 1)],
-            new UserDto(new UserId(Guid.NewGuid().ToString()), []));
+            new UserId(Guid.NewGuid().ToString()));
 
         // Act
         var result = await sut.SetAsync(request, CancellationToken.None);
@@ -160,7 +163,7 @@ public sealed class ConfigEntryServiceTests
             service.Id,
             VersionId.New(),
             [new SetEntryRequest.SetRequest(EntryId.New(), "v", 1)],
-            new UserDto(new UserId(Guid.NewGuid().ToString()), Roles: ["billing"]));
+            new UserId(Guid.NewGuid().ToString()));
 
         // Act
         var act = () => sut.SetAsync(request, CancellationToken.None);
@@ -177,6 +180,8 @@ public sealed class ConfigEntryServiceTests
         var serviceRepo = Substitute.For<IApplicationsRepository>();
 
         var service = TestFakes.BuildService(name: "billing");
+        var updatedBy = new UserId(Guid.NewGuid().ToString());
+        service.Members.Add(updatedBy);
         serviceRepo.GetAsync(Arg.Any<SearchServiceRequest>(), Arg.Any<CancellationToken>())
             .Returns(AsyncEnumerableHelper.From(service));
 
@@ -193,7 +198,7 @@ public sealed class ConfigEntryServiceTests
                 new SetEntryRequest.SetRequest(existing.Id, "v1", 1),
                 new SetEntryRequest.SetRequest(EntryId.New(), "v2", 1),
             ],
-            new UserDto(new UserId(Guid.NewGuid().ToString()), Roles: ["billing"]));
+            updatedBy);
 
         // Act
         var result = await sut.SetAsync(request, CancellationToken.None);
@@ -211,6 +216,8 @@ public sealed class ConfigEntryServiceTests
         var serviceRepo = Substitute.For<IApplicationsRepository>();
 
         var service = TestFakes.BuildService(name: "billing");
+        var updatedBy = new UserId(Guid.NewGuid().ToString());
+        service.Members.Add(updatedBy);
         serviceRepo.GetAsync(Arg.Any<SearchServiceRequest>(), Arg.Any<CancellationToken>())
             .Returns(AsyncEnumerableHelper.From(service));
 
@@ -227,7 +234,7 @@ public sealed class ConfigEntryServiceTests
                 new SetEntryRequest.SetRequest(entry1.Id, "new1", 1),
                 new SetEntryRequest.SetRequest(entry2.Id, "new2", 1),
             ],
-            new UserDto(new UserId(Guid.NewGuid().ToString()), Roles: ["BILLING"])); // case-insensitive
+            updatedBy);
 
         // Act
         var result = await sut.SetAsync(request, CancellationToken.None);
@@ -295,6 +302,9 @@ public sealed class ConfigEntryServiceTests
         var distributedLock = Substitute.For<IDistributedLock>();
         distributedLock
             .AcquireAsync(Arg.Any<TimeSpan?>(), Arg.Any<CancellationToken>())
+            .Returns(new Disposable());
+        distributedLock
+            .TryAcquireAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new Disposable());
 
         factory

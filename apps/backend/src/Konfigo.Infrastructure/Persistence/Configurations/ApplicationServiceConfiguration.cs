@@ -1,4 +1,3 @@
-using System.Linq;
 using Konfigo.Domain.Entities;
 using Konfigo.Domain.ValueType;
 using Konfigo.Infrastructure.Extensions;
@@ -29,10 +28,7 @@ internal sealed class ApplicationServiceConfiguration : IEntityTypeConfiguration
 
         builder
             .Property(x => x.Members)
-            .HasColumnName("members")
-            .HasConversion(
-                x => x.Select(c => c.Value).ToArray(),
-                x => x.Select(c => new UserId(c)).ToHashSet());
+            .HasColumnName("members");
 
         builder
             .Property(x => x.Num)

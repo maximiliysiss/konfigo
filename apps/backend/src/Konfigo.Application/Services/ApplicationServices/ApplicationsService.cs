@@ -125,6 +125,8 @@ internal sealed class ApplicationsService : IApplicationsService
 
     public async Task<bool> AddMemberAsync(AddMemberRequest request, CancellationToken cancellationToken)
     {
+        _logger.LogApplicationServiceMemberAddStarted(request.Id, request.UserId);
+
         await using var _ = await _distributedLockProvider.TryAcquireOrThrowAsync(
             key: (request.Id, request.UserId).AsKey(),
             timeout: _options.LockTimeout,
@@ -141,15 +143,22 @@ internal sealed class ApplicationsService : IApplicationsService
         }
 
         if (!service.TryAddMember(request.UserId, _dateTimeProvider.GetNow()))
+        {
+            _logger.LogApplicationServiceMemberAddSkipped(request.Id, request.UserId);
             return false;
+        }
 
         await _repository.UpdateAsync(service, cancellationToken);
+
+        _logger.LogApplicationServiceMemberAdded(request.Id, request.UserId);
 
         return true;
     }
 
     public async Task<bool> RemoveMemberAsync(RemoveMemberRequest request, CancellationToken cancellationToken)
     {
+        _logger.LogApplicationServiceMemberRemoveStarted(request.Id, request.UserId);
+
         await using var _ = await _distributedLockProvider.TryAcquireOrThrowAsync(
             key: (request.Id, request.UserId).AsKey(),
             timeout: _options.LockTimeout,
@@ -166,9 +175,14 @@ internal sealed class ApplicationsService : IApplicationsService
         }
 
         if (!service.TryRemoveMember(request.UserId, _dateTimeProvider.GetNow()))
+        {
+            _logger.LogApplicationServiceMemberRemoveSkipped(request.Id, request.UserId);
             return false;
+        }
 
         await _repository.UpdateAsync(service, cancellationToken);
+
+        _logger.LogApplicationServiceMemberRemoved(request.Id, request.UserId);
 
         return true;
     }
