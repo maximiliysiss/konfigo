@@ -5,7 +5,7 @@ namespace Konfigo.Application.Repositories.Models;
 public sealed record SearchServiceRequest(
     ServiceId[] Ids,
     string? Name,
-    string[] Labels,
+    UserId? Member,
     int PageSize,
     SearchServiceRequest.PageToken Cursor,
     bool AsTracking)
@@ -13,7 +13,7 @@ public sealed record SearchServiceRequest(
     public static SearchServiceRequest Create(
         ServiceId[]? ids = null,
         string? name = null,
-        string[]? labels = null,
+        UserId? member = null,
         int? pageSize = null,
         PageToken? cursor = null,
         bool asTracking = true)
@@ -21,7 +21,7 @@ public sealed record SearchServiceRequest(
         return new SearchServiceRequest(
             Ids: ids ?? [],
             Name: name,
-            Labels: labels ?? [],
+            Member: member,
             PageSize: pageSize ?? int.MaxValue,
             Cursor: cursor ?? PageToken.Empty,
             AsTracking: asTracking);

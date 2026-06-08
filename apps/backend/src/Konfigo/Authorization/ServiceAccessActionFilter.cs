@@ -57,7 +57,9 @@ internal sealed class ServiceAccessActionFilter : IAsyncActionFilter
                 return;
             }
 
-            if (!context.HttpContext.User.IsAllowed(service.Name))
+            var userId = context.HttpContext.User.GetMemberId();
+
+            if (userId is not null && !service.Members.Contains(userId.Value))
             {
                 _logger.LogAccessDenied(id);
                 context.Result = new ForbidResult();

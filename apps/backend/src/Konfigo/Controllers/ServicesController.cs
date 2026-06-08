@@ -16,6 +16,7 @@ using Konfigo.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using AddMemberRequest = Konfigo.Application.Services.ApplicationServices.Models.AddMemberRequest;
 using UpdateServiceRequest = Konfigo.Application.Services.ApplicationServices.Models.UpdateServiceRequest;
 
 namespace Konfigo.Controllers;
@@ -45,14 +46,10 @@ public sealed class ServicesController : ControllerBase
     {
         var pageToken = contract.PageToken.AsPageToken(SearchServiceRequest.PageToken.Empty);
 
-        var labels = User.GetServices();
-        if (labels is [])
-            return PageResponse<ApplicationService>.Empty;
-
         var searchServiceRequest = SearchServiceRequest.Create(
             name: contract.Name,
             pageSize: contract.PageSize,
-            labels: labels,
+            member: User.GetMemberId(),
             cursor: pageToken,
             asTracking: false);
 
@@ -148,5 +145,23 @@ public sealed class ServicesController : ControllerBase
             DeletedBy: User.GetId());
 
         await _applicationsService.DeleteAsync(deleteServiceRequest, cancellationToken);
+    }
+
+    [Authorize(Policy = AuthorizationPolicyNames.CanAll)]
+    [HttpPost("{serviceId:guid}/members/{userId}")]
+    public async Task AddMember(Guid serviceId, string userId, CancellationToken cancellationToken)
+    {
+        await _applicationsService.AddMemberAsync(
+            request: new AddMemberRequest(new ServiceId(serviceId), new UserId(userId), User.GetId()),
+            cancellationToken: cancellationToken);
+    }
+
+    [Authorize(Policy = AuthorizationPolicyNames.CanAll)]
+    [HttpDelete("{serviceId:guid}/members/{userId}")]
+    public async Task DeleteMember(Guid serviceId, string userId, CancellationToken cancellationToken)
+    {
+        await _applicationsService.RemoveMemberAsync(
+            request: new RemoveMemberRequest(new ServiceId(serviceId), new UserId(userId), User.GetId()),
+            cancellationToken: cancellationToken);
     }
 }

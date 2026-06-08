@@ -146,11 +146,11 @@ public class RealtimeConfigGrpcService : Client.Grpc.RealtimeConfigGrpcService.R
 
         _logger.LogConfigVersionGenerated(
             serviceId,
-            version.Id,
-            version.VersionLabel,
-            version.ConfigEntries.Count);
+            version.Version.Id,
+            version.Version.VersionLabel,
+            version.Version.ConfigEntries.Count);
 
-        return new CreateVersionResponse { VersionId = version.Id.Value.ToString() };
+        return new CreateVersionResponse { VersionId = version.Version.Id.Value.ToString() };
 
         IEnumerable<GenerateVersionRequest.EntryRequest> Map(CreateVersionRequest.Types.ClassEntry entry)
             => entry.Entries.Select(c => MapEntry(c, entry));

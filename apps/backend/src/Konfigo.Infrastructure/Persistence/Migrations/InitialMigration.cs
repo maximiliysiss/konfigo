@@ -18,6 +18,7 @@ CREATE TABLE public.application_services (
     description text NULL,
     repository_url text NULL,
     contact_email text NULL,
+    members text[] NOT NULL,
     num int NOT NULL GENERATED ALWAYS AS IDENTITY
 );
 

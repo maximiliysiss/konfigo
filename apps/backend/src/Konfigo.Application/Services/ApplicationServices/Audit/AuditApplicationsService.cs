@@ -36,25 +36,27 @@ internal sealed class AuditApplicationsService : IApplicationsService
             asyncFlowOption: TransactionScopeAsyncFlowOption.Enabled);
 
         var applicationService = await _service.AddAsync(request, cancellationToken);
-
-        var auditLog = new AuditLog
-        {
-            Entry = new ServiceCreatedEntry(
-                Name: request.Name,
-                Description: request.Description,
-                RepositoryUrl: request.RepositoryUrl,
-                ContactEmail: request.ContactEmail),
-            ServiceId = applicationService.Id,
-            UserId = request.CreatedBy,
-            Id = LogId.New(),
-            CreatedAt = applicationService.CreatedAt,
-        };
-
-        await _auditLogRepository.AddAsync(auditLog, cancellationToken);
+        await _auditLogRepository.AddAsync(MapAudit(), cancellationToken);
 
         transactionScope.Complete();
 
         return applicationService;
+
+        AuditLog MapAudit()
+        {
+            return new AuditLog()
+            {
+                Entry = new ServiceCreatedEntry(
+                    Name: request.Name,
+                    Description: request.Description,
+                    RepositoryUrl: request.RepositoryUrl,
+                    ContactEmail: request.ContactEmail),
+                ServiceId = applicationService.Id,
+                UserId = request.CreatedBy,
+                Id = LogId.New(),
+                CreatedAt = applicationService.CreatedAt,
+            };
+        }
     }
 
     public async Task<ApplicationService?> UpdateAsync(UpdateServiceRequest request, CancellationToken cancellationToken)
@@ -65,10 +67,16 @@ internal sealed class AuditApplicationsService : IApplicationsService
             asyncFlowOption: TransactionScopeAsyncFlowOption.Enabled);
 
         var applicationService = await _service.UpdateAsync(request, cancellationToken);
-
         if (applicationService is not null)
+            await _auditLogRepository.AddAsync(MapAudit(), cancellationToken);
+
+        transactionScope.Complete();
+
+        return applicationService;
+
+        AuditLog MapAudit()
         {
-            var auditLog = new AuditLog
+            return new AuditLog
             {
                 ServiceId = applicationService.Id,
                 UserId = request.UpdatedBy,
@@ -80,13 +88,7 @@ internal sealed class AuditApplicationsService : IApplicationsService
                     RepositoryUrl: request.RepositoryUrl,
                     ContactEmail: request.ContactEmail)
             };
-
-            await _auditLogRepository.AddAsync(auditLog, cancellationToken);
         }
-
-        transactionScope.Complete();
-
-        return applicationService;
     }
 
     public async Task<ApplicationService?> DeleteAsync(DeleteServiceRequest request, CancellationToken cancellationToken)
@@ -97,10 +99,16 @@ internal sealed class AuditApplicationsService : IApplicationsService
             asyncFlowOption: TransactionScopeAsyncFlowOption.Enabled);
 
         var service = await _service.DeleteAsync(request, cancellationToken);
-
         if (service is not null)
+            await _auditLogRepository.AddAsync(MapAudit(), cancellationToken);
+
+        transactionScope.Complete();
+
+        return service;
+
+        AuditLog MapAudit()
         {
-            var auditLog = new AuditLog
+            return new AuditLog
             {
                 Id = LogId.New(),
                 Entry = new ServiceDeletedEntry(
@@ -112,12 +120,62 @@ internal sealed class AuditApplicationsService : IApplicationsService
                 UserId = request.DeletedBy,
                 CreatedAt = _dateTimeProvider.GetNow(),
             };
-
-            await _auditLogRepository.AddAsync(auditLog, cancellationToken);
         }
+    }
+
+    public async Task<bool> AddMemberAsync(AddMemberRequest request, CancellationToken cancellationToken)
+    {
+        using var transactionScope = new TransactionScope(
+            scopeOption: TransactionScopeOption.Required,
+            transactionOptions: new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
+            asyncFlowOption: TransactionScopeAsyncFlowOption.Enabled);
+
+        var isAdded = await _service.AddMemberAsync(request, cancellationToken);
+        if (isAdded)
+            await _auditLogRepository.AddAsync(MapAudit(), cancellationToken);
 
         transactionScope.Complete();
 
-        return service;
+        return isAdded;
+
+        AuditLog MapAudit()
+        {
+            return new AuditLog
+            {
+                Id = LogId.New(),
+                Entry = new ServiceMemberAddedEntry(request.UserId),
+                ServiceId = request.Id,
+                UserId = request.CreatedBy,
+                CreatedAt = _dateTimeProvider.GetNow(),
+            };
+        }
+    }
+
+    public async Task<bool> RemoveMemberAsync(RemoveMemberRequest request, CancellationToken cancellationToken)
+    {
+        using var transactionScope = new TransactionScope(
+            scopeOption: TransactionScopeOption.Required,
+            transactionOptions: new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
+            asyncFlowOption: TransactionScopeAsyncFlowOption.Enabled);
+
+        var isRemoved = await _service.RemoveMemberAsync(request, cancellationToken);
+        if (isRemoved)
+            await _auditLogRepository.AddAsync(MapAudit(), cancellationToken);
+
+        transactionScope.Complete();
+
+        return isRemoved;
+
+        AuditLog MapAudit()
+        {
+            return new AuditLog
+            {
+                Id = LogId.New(),
+                Entry = new ServiceMemberRemovedEntry(request.UserId),
+                ServiceId = request.Id,
+                UserId = request.CreatedBy,
+                CreatedAt = _dateTimeProvider.GetNow(),
+            };
+        }
     }
 }

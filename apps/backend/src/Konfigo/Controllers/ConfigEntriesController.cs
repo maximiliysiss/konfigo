@@ -102,7 +102,7 @@ public sealed class ConfigEntriesController : ControllerBase
             ServiceId: service,
             VersionId: version,
             Requests: request.Select(Map).ToArray(),
-            UpdatedBy: new UserDto(User.GetId(), User.GetServices()));
+            UpdatedBy: User.GetMemberId());
 
         try
         {

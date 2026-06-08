@@ -6,7 +6,6 @@ using Konfigo.Application.Extensions;
 using Konfigo.Application.Infrastructure.DateTime;
 using Konfigo.Application.Repositories;
 using Konfigo.Application.Repositories.Models;
-using Konfigo.Application.Services.Configurations.Extensions;
 using Konfigo.Application.Services.Configurations.Models;
 using Konfigo.Application.Services.Configurations.Options;
 using Konfigo.Domain.Entities;
@@ -66,6 +65,11 @@ internal sealed class ConfigVersionService : IConfigVersionService
 
     public async Task<ConfigVersion?> UpdateAsync(UpdateVersionRequest request, CancellationToken cancellationToken)
     {
+        await using var _ = await _distributedLockProvider.TryAcquireOrThrowAsync(
+            key: request.VersionId.AsKey(),
+            timeout: _options.LockTimeout,
+            cancellationToken: cancellationToken);
+
         _logger.LogConfigVersionUpdateStarted(request.ServiceId, request.VersionId, request.VersionLabel);
 
         var version = await _repository
@@ -91,14 +95,14 @@ internal sealed class ConfigVersionService : IConfigVersionService
         return version;
     }
 
-    public async Task<ConfigVersion> GenerateAsync(GenerateVersionRequest request, CancellationToken cancellationToken)
+    public async Task<GenerateResult> GenerateAsync(GenerateVersionRequest request, CancellationToken cancellationToken)
     {
-        _logger.LogConfigVersionGenerateStarted(request.ServiceId, request.VersionLabel, request.Entries.Length);
-
         await using var _ = await _distributedLockProvider.AcquireLockAsync(
             name: (request.ServiceId, request.VersionLabel).AsKey(),
             timeout: _options.LockTimeout,
             cancellationToken: cancellationToken);
+
+        _logger.LogConfigVersionGenerateStarted(request.ServiceId, request.VersionLabel, request.Entries.Length);
 
         var searchExistingVersionRequest = SearchVersionRequest.Create(
             serviceId: request.ServiceId,
@@ -117,7 +121,7 @@ internal sealed class ConfigVersionService : IConfigVersionService
                 existingVersion.Id,
                 request.VersionLabel);
 
-            return existingVersion;
+            return new GenerateResult.Exists(existingVersion);
         }
 
         var searchVersionRequest = SearchVersionRequest.Create(
@@ -155,7 +159,7 @@ internal sealed class ConfigVersionService : IConfigVersionService
             configVersion.VersionLabel,
             configVersion.ConfigEntries.Count);
 
-        return configVersion;
+        return new GenerateResult.New(configVersion);
 
         ConfigEntry Map(GenerateVersionRequest.EntryRequest entry)
         {

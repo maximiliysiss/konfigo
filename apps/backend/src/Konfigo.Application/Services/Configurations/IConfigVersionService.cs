@@ -9,5 +9,5 @@ public interface IConfigVersionService
 {
     Task<ConfigVersion> CreateAsync(CreateVersionRequest request, CancellationToken cancellationToken);
     Task<ConfigVersion?> UpdateAsync(UpdateVersionRequest request, CancellationToken cancellationToken);
-    Task<ConfigVersion> GenerateAsync(GenerateVersionRequest request, CancellationToken cancellationToken);
+    Task<GenerateResult> GenerateAsync(GenerateVersionRequest request, CancellationToken cancellationToken);
 }

@@ -11,4 +11,6 @@ public interface IApplicationsService
     Task<ApplicationService> AddAsync(CreateServiceRequest request, CancellationToken cancellationToken);
     Task<ApplicationService?> UpdateAsync(UpdateServiceRequest request, CancellationToken cancellationToken);
     Task<ApplicationService?> DeleteAsync(DeleteServiceRequest request, CancellationToken cancellationToken);
+    Task<bool> AddMemberAsync(AddMemberRequest request, CancellationToken cancellationToken);
+    Task<bool> RemoveMemberAsync(RemoveMemberRequest request, CancellationToken cancellationToken);
 }

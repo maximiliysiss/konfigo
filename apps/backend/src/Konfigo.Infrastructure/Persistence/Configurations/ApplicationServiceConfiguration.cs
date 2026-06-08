@@ -1,3 +1,4 @@
+using System.Linq;
 using Konfigo.Domain.Entities;
 using Konfigo.Domain.ValueType;
 using Konfigo.Infrastructure.Extensions;
@@ -25,6 +26,13 @@ internal sealed class ApplicationServiceConfiguration : IEntityTypeConfiguration
         builder.Property(x => x.Description).HasColumnName("description");
         builder.Property(x => x.RepositoryUrl).HasColumnName("repository_url");
         builder.Property(x => x.ContactEmail).HasColumnName("contact_email");
+
+        builder
+            .Property(x => x.Members)
+            .HasColumnName("members")
+            .HasConversion(
+                x => x.Select(c => c.Value).ToArray(),
+                x => x.Select(c => new UserId(c)).ToHashSet());
 
         builder
             .Property(x => x.Num)

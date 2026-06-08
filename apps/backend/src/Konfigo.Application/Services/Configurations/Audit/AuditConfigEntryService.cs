@@ -40,27 +40,30 @@ internal sealed class AuditConfigEntryService : IConfigEntryService
 
         var configEntry = await _service.CreateAsync(request, cancellationToken);
 
-        var auditLog = new AuditLog
-        {
-            Entry = new EntryCreatedEntry(
-                Id: configEntry.Id,
-                RawValue: request.RawValue,
-                EnumDefinition: request.EnumDefinition,
-                Description: request.Description,
-                GroupName: request.GroupName,
-                GroupDescription: request.GroupDescription),
-            ServiceId = request.ServiceId,
-            UserId = request.CreatedBy,
-            Id = LogId.New(),
-            CreatedAt = configEntry.CreatedAt,
-        };
-
-        await _auditLogRepository.AddAsync(auditLog, cancellationToken);
+        await _auditLogRepository.AddAsync(MapAudit(), cancellationToken);
         _logger.LogEntryCreateAuditCompleted(request.ServiceId);
 
         transactionScope.Complete();
 
         return configEntry;
+
+        AuditLog MapAudit()
+        {
+            return new AuditLog()
+            {
+                Entry = new EntryCreatedEntry(
+                    Id: configEntry.Id,
+                    RawValue: request.RawValue,
+                    EnumDefinition: request.EnumDefinition,
+                    Description: request.Description,
+                    GroupName: request.GroupName,
+                    GroupDescription: request.GroupDescription),
+                ServiceId = request.ServiceId,
+                UserId = request.CreatedBy,
+                Id = LogId.New(),
+                CreatedAt = configEntry.CreatedAt,
+            };
+        }
     }
 
     public async Task<ConfigEntry?> UpdateAsync(UpdateEntryRequest request, CancellationToken cancellationToken)
@@ -74,7 +77,17 @@ internal sealed class AuditConfigEntryService : IConfigEntryService
 
         if (configEntry is not null)
         {
-            var auditLog = new AuditLog
+            await _auditLogRepository.AddAsync(MapAudit(), cancellationToken);
+            _logger.LogEntryUpdateAuditCompleted(request.ServiceId);
+        }
+
+        transactionScope.Complete();
+
+        return configEntry;
+
+        AuditLog MapAudit()
+        {
+            return new AuditLog()
             {
                 Entry = new EntryUpdatedEntry(
                     Id: configEntry.Id,
@@ -88,14 +101,7 @@ internal sealed class AuditConfigEntryService : IConfigEntryService
                 Id = LogId.New(),
                 CreatedAt = configEntry.UpdatedAt ?? configEntry.CreatedAt,
             };
-
-            await _auditLogRepository.AddAsync(auditLog, cancellationToken);
-            _logger.LogEntryUpdateAuditCompleted(request.ServiceId);
         }
-
-        transactionScope.Complete();
-
-        return configEntry;
     }
 
     public async Task<ConfigEntry[]> SetAsync(SetEntryRequest request, CancellationToken cancellationToken)
@@ -108,7 +114,7 @@ internal sealed class AuditConfigEntryService : IConfigEntryService
         var configEntries = await _service.SetAsync(request, cancellationToken);
 
         var auditLogs = configEntries
-            .Select(Map)
+            .Select(MapAudit)
             .ToArray();
 
         await _auditLogRepository.AddAsync(auditLogs, cancellationToken);
@@ -118,12 +124,12 @@ internal sealed class AuditConfigEntryService : IConfigEntryService
 
         return configEntries;
 
-        AuditLog Map(ConfigEntry entry)
+        AuditLog MapAudit(ConfigEntry entry)
         {
             return new AuditLog
             {
                 ServiceId = request.ServiceId,
-                UserId = request.UpdatedBy.Id,
+                UserId = request.UpdatedBy,
                 Id = LogId.New(),
                 CreatedAt = entry.UpdatedAt ?? entry.CreatedAt,
                 Entry = new EntrySetEntry(entry.Id, entry.RawValue),
@@ -142,7 +148,17 @@ internal sealed class AuditConfigEntryService : IConfigEntryService
 
         if (configEntry is not null)
         {
-            var auditLog = new AuditLog
+            await _auditLogRepository.AddAsync(MapAudit(), cancellationToken);
+            _logger.LogEntryDeleteAuditCompleted(request.ServiceId);
+        }
+
+        transactionScope.Complete();
+
+        return configEntry;
+
+        AuditLog MapAudit()
+        {
+            return new AuditLog()
             {
                 Entry = new EntryDeletedEntry(
                     Id: configEntry.Id,
@@ -156,13 +172,6 @@ internal sealed class AuditConfigEntryService : IConfigEntryService
                 Id = LogId.New(),
                 CreatedAt = configEntry.UpdatedAt ?? configEntry.CreatedAt,
             };
-
-            await _auditLogRepository.AddAsync(auditLog, cancellationToken);
-            _logger.LogEntryDeleteAuditCompleted(request.ServiceId);
         }
-
-        transactionScope.Complete();
-
-        return configEntry;
     }
 }

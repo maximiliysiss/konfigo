@@ -6,7 +6,6 @@ using Konfigo.Application.Extensions;
 using Konfigo.Application.Infrastructure.DateTime;
 using Konfigo.Application.Repositories;
 using Konfigo.Application.Repositories.Models;
-using Konfigo.Application.Services.Configurations.Extensions;
 using Konfigo.Application.Services.Configurations.Models;
 using Konfigo.Application.Services.Configurations.Options;
 using Konfigo.Domain.Entities;
@@ -76,12 +75,12 @@ internal sealed class ConfigEntryService : IConfigEntryService
 
     public async Task<ConfigEntry?> UpdateAsync(UpdateEntryRequest request, CancellationToken cancellationToken)
     {
-        _logger.LogConfigEntryUpdateStarted(request.ServiceId, request.VersionId, request.Id);
-
-        await using var _ = await _distributedLockFactory.TryAcquireLockAsync(
-            name: (request.ServiceId, request.VersionId).AsKey(),
+        await using var _ = await _distributedLockFactory.TryAcquireOrThrowAsync(
+            key: (request.ServiceId, request.VersionId).AsKey(),
             timeout: _options.LockTimeout,
             cancellationToken: cancellationToken);
+
+        _logger.LogConfigEntryUpdateStarted(request.ServiceId, request.VersionId, request.Id);
 
         var entry = await _configEntryRepository
             .GetAsync(SearchEntryRequest.Create(request.ServiceId, request.VersionId, ids: [request.Id]), cancellationToken)
@@ -124,14 +123,14 @@ internal sealed class ConfigEntryService : IConfigEntryService
             return [];
         }
 
-        if (request.UpdatedBy.Roles is not null && !request.UpdatedBy.Roles.Contains(service.Name, StringComparer.OrdinalIgnoreCase))
+        if (request.UpdatedBy is not null && !service.Members.Contains(request.UpdatedBy.Value))
         {
-            _logger.LogAccessDenied(request.ServiceId, request.UpdatedBy.Id);
+            _logger.LogAccessDenied(request.ServiceId, request.UpdatedBy);
             throw new UnauthorizedAccessException("User is not a member of the service");
         }
 
-        await using var _ = await _distributedLockFactory.TryAcquireLockAsync(
-            name: (request.ServiceId, request.VersionId).AsKey(),
+        await using var _ = await _distributedLockFactory.TryAcquireOrThrowAsync(
+            key: (request.ServiceId, request.VersionId).AsKey(),
             timeout: _options.LockTimeout,
             cancellationToken: cancellationToken);
 
@@ -177,12 +176,12 @@ internal sealed class ConfigEntryService : IConfigEntryService
 
     public async Task<ConfigEntry?> DeleteAsync(DeleteEntryRequest request, CancellationToken cancellationToken)
     {
-        _logger.LogConfigEntryDeleteStarted(request.ServiceId, request.VersionId, request.Id);
-
-        await using var _ = await _distributedLockFactory.TryAcquireLockAsync(
-            name: (request.ServiceId, request.VersionId).AsKey(),
+        await using var _ = await _distributedLockFactory.TryAcquireOrThrowAsync(
+            key: (request.ServiceId, request.VersionId).AsKey(),
             timeout: _options.LockTimeout,
             cancellationToken: cancellationToken);
+
+        _logger.LogConfigEntryDeleteStarted(request.ServiceId, request.VersionId, request.Id);
 
         var entry = await _configEntryRepository
             .GetAsync(SearchEntryRequest.Create(request.ServiceId, request.VersionId, ids: [request.Id]), cancellationToken)
