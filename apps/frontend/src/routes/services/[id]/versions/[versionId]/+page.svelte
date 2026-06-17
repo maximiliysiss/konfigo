@@ -52,6 +52,7 @@
 	};
 
 	type Toast = { id: number; message: string };
+	type ConnectionStatus = 'connecting' | 'live' | 'reconnecting' | 'offline';
 	type ValueTypeOption = { label: string; value: ConfigValueType };
 
 	const valueTypeOptions: ValueTypeOption[] = [
@@ -120,6 +121,7 @@
 	let toasts = $state<Toast[]>([]);
 	let toastSeed = 1;
 	let connection: HubConnection | null = null;
+	let connectionStatus = $state<ConnectionStatus>('offline');
 	let connectionServiceId = '';
 	let connectionVersionId = '';
 	let mounted = false;
@@ -138,6 +140,12 @@
 	const pendingEntries = $derived(entries.filter((entry) => isEntryChanged(entry)));
 	const pendingCount = $derived(pendingEntries.length);
 	const canBatchSave = $derived(showOnlyChanged && pendingCount > 0 && !batchSaving);
+	const connectionStatusLabel = $derived.by(() => {
+		if (connectionStatus === 'live') return 'Live';
+		if (connectionStatus === 'connecting') return 'Connecting';
+		if (connectionStatus === 'reconnecting') return 'Reconnecting';
+		return 'Offline';
+	});
 
 	const knownGroups = $derived.by(() => {
 		const groups = new Map<string, string>();
@@ -964,12 +972,25 @@
 	async function initRealtime() {
 		if (!browser) return;
 
+		connectionStatus = 'connecting';
 		const signalrUrl = PUBLIC_SIGNALR_URL || buildBackendUrl('/hubs/config');
 		connection = new HubConnectionBuilder()
 			.withUrl(signalrUrl, { withCredentials: true })
 			.withAutomaticReconnect()
 			.configureLogging(LogLevel.Warning)
 			.build();
+
+		connection.onreconnecting(() => {
+			connectionStatus = 'reconnecting';
+		});
+
+		connection.onreconnected(() => {
+			connectionStatus = 'live';
+		});
+
+		connection.onclose(() => {
+			connectionStatus = 'offline';
+		});
 
 		connection.on('ConfigChanged', (payload: any) => {
 			const requests = (payload?.requests ?? payload?.Requests ?? []) as { id?: string; Id?: string; value?: string | null; Value?: string | null }[];
@@ -1009,13 +1030,20 @@
 			}
 		});
 
-		await connection.start();
-		await connection.invoke('JoinVersionGroup', serviceId, versionId);
-		connectionServiceId = serviceId;
-		connectionVersionId = versionId;
+		try {
+			await connection.start();
+			await connection.invoke('JoinVersionGroup', serviceId, versionId);
+			connectionStatus = 'live';
+			connectionServiceId = serviceId;
+			connectionVersionId = versionId;
+		} catch (e) {
+			connectionStatus = 'offline';
+			throw e;
+		}
 	}
 
 	async function teardownRealtime() {
+		connectionStatus = 'offline';
 		if (!connection) return;
 		try {
 			await connection.invoke('LeaveVersionGroup', connectionServiceId, connectionVersionId);
@@ -1161,9 +1189,15 @@
 			<div class="mb-4 flex flex-wrap items-start justify-between gap-3">
 				<div>
 					<p class="section-label">Config</p>
-					<div class="mt-2 flex items-center gap-3">
+					<div class="mt-2 flex flex-wrap items-center gap-3">
 						<h2 class="text-[20px] font-semibold">Versions</h2>
-						<span class={`status-dot ${subscriptionPulse ? 'pulse' : ''}`}></span>
+						<span class={`live-status live-${connectionStatus}`} role="status" aria-live="polite">
+							<span class={`live-status-dot ${subscriptionPulse ? 'pulse' : ''}`}></span>
+							{connectionStatusLabel}
+						</span>
+						{#if pendingCount > 0}
+							<span class="metric-pill">{pendingCount} unsaved</span>
+						{/if}
 					</div>
 					<p class="mt-1 text-[13px] text-[var(--text-secondary)]">
 						{version?.versionLabel ?? 'Version'}{version?.description ? ` · ${version.description}` : ''}
@@ -1188,7 +1222,7 @@
 			{/if}
 
 			{#if pendingCount > 0}
-				<div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3">
+				<div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-3">
 					<label class="inline-flex items-center gap-2 text-[13px] text-[var(--text-primary)]">
 						<input class="h-4 w-4 accent-[var(--accent)]" type="checkbox" bind:checked={showOnlyChanged} />
 						<span>Show changes</span>
@@ -1561,7 +1595,7 @@
 	</section>
 
 {#if mainTab === 'versions' && pendingCount > 0}
-	<div class="fixed bottom-4 left-1/2 z-40 w-[min(760px,calc(100vw-32px))] -translate-x-1/2 rounded-[12px] border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3 shadow-[var(--shadow-md)]">
+	<div class="fixed bottom-4 left-1/2 z-40 w-[min(760px,calc(100vw-32px))] -translate-x-1/2 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-surface)] px-4 py-3 shadow-[var(--shadow-md)]">
 		<div class="flex flex-wrap items-center justify-between gap-3">
 			<div class="min-w-0">
 				<div class="text-[14px] font-medium text-[var(--text-primary)]">{pendingCount} unsaved {pendingCount === 1 ? 'change' : 'changes'}</div>
@@ -1859,6 +1893,43 @@
 		color: var(--text-primary);
 	}
 
+	.live-status {
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+		height: 28px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		background: var(--bg-elevated);
+		padding: 0 10px;
+		color: var(--text-secondary);
+		font-size: 12px;
+		font-weight: 600;
+	}
+
+	.live-status-dot {
+		width: 7px;
+		height: 7px;
+		border-radius: 999px;
+		background: currentColor;
+	}
+
+	.live-live {
+		border-color: color-mix(in srgb, var(--success) 30%, var(--border));
+		color: var(--success);
+	}
+
+	.live-connecting,
+	.live-reconnecting {
+		border-color: color-mix(in srgb, var(--warning) 32%, var(--border));
+		color: var(--warning);
+	}
+
+	.live-offline {
+		border-color: color-mix(in srgb, var(--danger) 32%, var(--border));
+		color: var(--danger);
+	}
+
 	.version-carousel {
 		overflow-x: auto;
 		border-bottom: 1px solid var(--border);
@@ -1898,7 +1969,7 @@
 
 	.version-tab.active {
 		border-color: var(--border);
-		background: var(--bg-surface);
+		background: var(--bg-elevated);
 		color: var(--accent-text);
 		box-shadow: inset 0 2px 0 var(--accent);
 	}
