@@ -25,8 +25,8 @@
 		<span class="block text-[13px] text-[var(--text-secondary)]">{label}</span>
 	{/if}
 	<span
-		class={`relative flex h-9 items-center rounded-[7px] border bg-[var(--bg-elevated)] px-3 transition-all duration-150 ${
-			error ? 'border-[var(--danger)]' : 'border-[var(--border)] focus-within:border-[var(--ink)]'
+		class={`relative flex h-9 items-center rounded-[var(--radius-sm)] border bg-[var(--bg-elevated)] px-3 transition-colors duration-150 ${
+			error ? 'border-[var(--danger)]' : 'border-[var(--border)] focus-within:border-[var(--accent)]'
 		}`}
 	>
 		<select

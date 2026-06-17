@@ -24,7 +24,7 @@
 
 {#if open}
 	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-[4px]">
-		<div class="w-full max-w-[400px] rounded-[16px] border border-[var(--border)] bg-[var(--bg-surface)] p-6 shadow-[var(--shadow-md)]">
+		<div class="w-full max-w-[400px] rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg-surface)] p-6 shadow-[var(--shadow-md)]">
 			<h3 class="text-[20px] font-semibold">{title}</h3>
 			<p class="mt-3 text-[14px] text-[var(--text-secondary)]">{message}</p>
 			<div class="mt-6 flex justify-end gap-3">

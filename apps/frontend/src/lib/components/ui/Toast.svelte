@@ -17,7 +17,7 @@
 	} satisfies Record<AppToast['type'], string>;
 </script>
 
-<div class={`relative w-80 overflow-hidden rounded-[12px] border-l-4 border border-[var(--border)] p-4 shadow-[var(--shadow-md)] ${styles[toast.type as AppToast['type']]}`}>
+<div class={`relative w-80 overflow-hidden rounded-[var(--radius-md)] border-l-4 border border-[var(--border)] p-4 shadow-[var(--shadow-md)] ${styles[toast.type as AppToast['type']]}`}>
 	<p class="pr-6 text-[13px] text-[var(--text-primary)]">{toast.message}</p>
 	<div class="absolute bottom-0 left-0 h-[2px] w-full bg-[var(--bg-muted)]">
 		<div class={`h-full origin-left animate-[toast-progress_4s_linear_forwards] ${bars[toast.type as AppToast['type']]}`}></div>

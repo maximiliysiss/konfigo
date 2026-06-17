@@ -27,8 +27,8 @@
 		<span class="block text-[13px] text-[var(--text-secondary)]">{label}</span>
 	{/if}
 	<textarea
-		class={`min-h-20 w-full resize-y rounded-[7px] border bg-[var(--bg-elevated)] px-3 py-2 text-[14px] text-[var(--text-primary)] outline-none transition-all duration-150 placeholder:text-[var(--text-tertiary)] ${
-			error ? 'border-[var(--danger)]' : 'border-[var(--border)] focus:border-[var(--ink)]'
+		class={`min-h-20 w-full resize-y rounded-[var(--radius-sm)] border bg-[var(--bg-elevated)] px-3 py-2 text-[14px] text-[var(--text-primary)] outline-none transition-colors duration-150 placeholder:text-[var(--text-tertiary)] ${
+			error ? 'border-[var(--danger)]' : 'border-[var(--border)] focus:border-[var(--accent)]'
 		}`}
 		{id}
 		{placeholder}
