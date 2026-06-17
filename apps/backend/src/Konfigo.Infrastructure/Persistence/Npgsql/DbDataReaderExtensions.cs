@@ -1,6 +1,6 @@
 using System.Data.Common;
 
-namespace Konfigo.IntegrationTests.Shared.Npgsql;
+namespace Konfigo.Infrastructure.Persistence.Npgsql;
 
 internal static class DbDataReaderExtensions
 {
@@ -14,5 +14,9 @@ internal static class DbDataReaderExtensions
         => reader.GetInt32(reader.GetOrdinal(name));
 
     public static string? GetNullableString(this DbDataReader reader, string name)
-        => reader.IsDBNull(reader.GetOrdinal(name)) ? null : reader.GetString(name);
+    {
+        var ordinal = reader.GetOrdinal(name);
+
+        return reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
+    }
 }

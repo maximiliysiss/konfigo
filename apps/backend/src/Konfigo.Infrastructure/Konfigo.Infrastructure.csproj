@@ -9,7 +9,7 @@
     <PackageReference Include="DistributedLock.Redis" />
     <PackageReference Include="Grpc.AspNetCore" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL"/>
+    <PackageReference Include="Npgsql" />
   </ItemGroup>
 
 </Project>

@@ -5,7 +5,6 @@ using Konfigo.Controllers.Models.Audit;
 using Konfigo.Controllers.Models.Entry;
 using Konfigo.Controllers.Models.Services;
 using Konfigo.Controllers.Models.Versions;
-using Konfigo.Domain.ValueType;
 using Konfigo.IntegrationTests.Shared.Responses;
 
 namespace Konfigo.IntegrationTests.Shared.Extensions;

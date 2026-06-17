@@ -4,8 +4,8 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Konfigo.Infrastructure.Persistence.Factory;
+using Konfigo.Infrastructure.Persistence.Npgsql;
 using Konfigo.IntegrationTests.DbHelpers.Shared;
-using Konfigo.IntegrationTests.Shared.Npgsql;
 using Npgsql;
 
 namespace Konfigo.IntegrationTests.DbHelpers;

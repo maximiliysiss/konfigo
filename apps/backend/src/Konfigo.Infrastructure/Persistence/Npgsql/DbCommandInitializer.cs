@@ -1,5 +1,6 @@
-// ReSharper disable once CheckNamespace
 
+
+// ReSharper disable once CheckNamespace
 namespace System.Data.Common;
 
 internal readonly ref struct DbCommandInitializer

@@ -1,15 +1,12 @@
 using System;
 using System.Data.Common;
 using Konfigo.Application.Repositories;
-using Konfigo.Infrastructure.Persistence;
 using Konfigo.Infrastructure.Persistence.Factory;
-using Konfigo.Infrastructure.Persistence.Interceptors;
 using Konfigo.Infrastructure.Persistence.Migrations.Initializer;
 using Konfigo.Infrastructure.Persistence.Migrations.Services;
 using Konfigo.Infrastructure.Persistence.Repositories;
 using Medallion.Threading;
 using Medallion.Threading.Redis;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -34,9 +31,6 @@ public static class ServiceCollectionExtensions
             .AddPublo(opt => opt.UseNpgsql<ConnectionFactory>());
 
         services
-            .AddDbContext<AppDbContext>((sp, opt) => ConfigureDbContext(opt, sp));
-
-        services
             .AddScoped<IConfigEntryRepository, ConfigEntryRepository>()
             .AddScoped<IConfigVersionsRepository, ConfigVersionsRepository>()
             .AddScoped<IApplicationsRepository, ApplicationRepository>()
@@ -54,9 +48,6 @@ public static class ServiceCollectionExtensions
 
         services
             .TryAddSingleton<IDatabaseInitializer, DatabaseInitializer>();
-
-        services
-            .TryAddSingleton<MembersShadowSyncInterceptor>();
 
         return services;
 
@@ -78,13 +69,6 @@ public static class ServiceCollectionExtensions
             var builder = new NpgsqlDataSourceBuilder(configuration.GetRequiredConnectionString("Postgres"));
 
             return builder.Build();
-        }
-
-        static DbContextOptionsBuilder ConfigureDbContext(DbContextOptionsBuilder opt, IServiceProvider sp)
-        {
-            return opt
-                .AddInterceptors(sp.GetRequiredService<MembersShadowSyncInterceptor>())
-                .UseNpgsql(sp.GetRequiredService<DbDataSource>());
         }
     }
 }
