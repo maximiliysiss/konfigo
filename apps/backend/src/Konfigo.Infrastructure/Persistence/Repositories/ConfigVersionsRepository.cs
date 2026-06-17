@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Transactions;
 using Konfigo.Application.Repositories;
 using Konfigo.Application.Repositories.Models;
 using Konfigo.Domain.Entities;
@@ -80,17 +81,32 @@ VALUES (:id, :createdAt, :updatedAt, :serviceId, :versionLabel, :description);
 INSERT INTO public.config_entries
     (id, created_at, updated_at, config_version_id, key, name, raw_value, value_type, enum_definition,
      description, group_name, group_description, generation)
-VALUES
-    (:id, :createdAt, :updatedAt, :configVersionId, :key, :name, :rawValue, :valueType, :enumDefinition,
-     :description, :groupName, :groupDescription, :generation);
+SELECT u.id, u.created_at, u.updated_at, u.config_version_id, u.key, u.name, u.raw_value, u.value_type,
+       u.enum_definition, u.description, u.group_name, u.group_description, u.generation
+FROM UNNEST(
+    :ids::uuid[],
+    :createdAts::timestamptz[],
+    :updatedAts::timestamptz[],
+    :configVersionIds::uuid[],
+    :keys::text[],
+    :names::text[],
+    :rawValues::text[],
+    :valueTypes::integer[],
+    :enumDefinitions::text[],
+    :descriptions::text[],
+    :groupNames::text[],
+    :groupDescriptions::text[],
+    :generations::integer[]
+) AS u(id, created_at, updated_at, config_version_id, key, name, raw_value, value_type,
+       enum_definition, description, group_name, group_description, generation);
 ";
+
+        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
 
         await using var connection = await connectionFactory.GetConnectionAsync(cancellationToken);
         await connection.OpenAsync(cancellationToken);
 
-        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-
-        await using DbCommand command = new DbCommandInitializer(versionQuery, connection, transaction)
+        await using DbCommand command = new DbCommandInitializer(versionQuery, connection)
         {
             Parameters =
             {
@@ -105,32 +121,34 @@ VALUES
 
         await command.ExecuteNonQueryAsync(cancellationToken);
 
-        foreach (var entry in version.ConfigEntries)
+        var entries = version.ConfigEntries.ToArray();
+
+        if (entries is [_, ..])
         {
-            await using DbCommand entryCommand = new DbCommandInitializer(entryQuery, connection, transaction)
+            await using DbCommand entryCommand = new DbCommandInitializer(entryQuery, connection)
             {
                 Parameters =
                 {
-                    { "id", entry.Id.Value },
-                    { "createdAt", entry.CreatedAt },
-                    { "updatedAt", entry.UpdatedAt },
-                    { "configVersionId", entry.ConfigVersionId.Value },
-                    { "key", entry.Key },
-                    { "name", entry.Name },
-                    { "rawValue", entry.RawValue },
-                    { "valueType", (int)entry.ValueType },
-                    { "enumDefinition", entry.EnumDefinition },
-                    { "description", entry.Description },
-                    { "groupName", entry.GroupName },
-                    { "groupDescription", entry.GroupDescription },
-                    { "generation", entry.Generation },
+                    { "ids", entries.Select(x => x.Id.Value).ToArray() },
+                    { "createdAts", entries.Select(x => x.CreatedAt).ToArray() },
+                    { "updatedAts", entries.Select(x => x.UpdatedAt).ToArray() },
+                    { "configVersionIds", entries.Select(x => x.ConfigVersionId.Value).ToArray() },
+                    { "keys", entries.Select(x => x.Key).ToArray() },
+                    { "names", entries.Select(x => x.Name).ToArray() },
+                    { "rawValues", entries.Select(x => x.RawValue).ToArray() },
+                    { "valueTypes", entries.Select(x => (int)x.ValueType).ToArray() },
+                    { "enumDefinitions", entries.Select(x => x.EnumDefinition).ToArray() },
+                    { "descriptions", entries.Select(x => x.Description).ToArray() },
+                    { "groupNames", entries.Select(x => x.GroupName).ToArray() },
+                    { "groupDescriptions", entries.Select(x => x.GroupDescription).ToArray() },
+                    { "generations", entries.Select(x => x.Generation).ToArray() },
                 }
             };
 
             await entryCommand.ExecuteNonQueryAsync(cancellationToken);
         }
 
-        await transaction.CommitAsync(cancellationToken);
+        scope.Complete();
 
         return version;
     }

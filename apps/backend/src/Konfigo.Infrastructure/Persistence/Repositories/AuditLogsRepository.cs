@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Threading;
@@ -26,36 +27,49 @@ internal sealed class AuditLogsRepository(IConnectionFactory connectionFactory) 
 
     public async Task AddAsync(AuditLog[] auditLog, CancellationToken cancellationToken)
     {
+        if (auditLog is [])
+            return;
+
         const string query = @"
 INSERT INTO public.audit_logs (id, created_at, updated_at, service_id, user_id, entry)
-VALUES (:id, :createdAt, :updatedAt, :serviceId, :userId, :entry)
-RETURNING num;
+SELECT u.id, u.created_at, u.updated_at, u.service_id, u.user_id, u.entry
+FROM UNNEST(
+    :ids::uuid[],
+    :createdAts::timestamptz[],
+    :updatedAts::timestamptz[],
+    :serviceIds::uuid[],
+    :userIds::text[],
+    :entries::jsonb[]
+) AS u(id, created_at, updated_at, service_id, user_id, entry)
+RETURNING id, num;
 ";
 
         await using var connection = await connectionFactory.GetConnectionAsync(cancellationToken);
+
+        await using DbCommand command = new DbCommandInitializer(query, connection)
+        {
+            Parameters =
+            {
+                { "ids", auditLog.Select(x => x.Id.Value).ToArray() },
+                { "createdAts", auditLog.Select(x => x.CreatedAt).ToArray() },
+                { "updatedAts", auditLog.Select(x => x.UpdatedAt).ToArray() },
+                { "serviceIds", auditLog.Select(x => x.ServiceId.Value).ToArray() },
+                { "userIds", auditLog.Select(x => x.UserId?.Value).ToArray() },
+                { "entries", auditLog.Select(x => JsonSerializer.Serialize(x.Entry, _jsonOptions)).ToArray(), NpgsqlDbType.Array | NpgsqlDbType.Jsonb },
+            }
+        };
+
         await connection.OpenAsync(cancellationToken);
 
-        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
-        foreach (var log in auditLog)
+        var logs = auditLog.ToDictionary(x => x.Id.Value);
+
+        while (await reader.ReadAsync(cancellationToken))
         {
-            await using DbCommand command = new DbCommandInitializer(query, connection, transaction)
-            {
-                Parameters =
-                {
-                    { "id", log.Id.Value },
-                    { "createdAt", log.CreatedAt },
-                    { "updatedAt", log.UpdatedAt },
-                    { "serviceId", log.ServiceId.Value },
-                    { "userId", log.UserId?.Value },
-                    { "entry", JsonSerializer.Serialize(log.Entry, _jsonOptions), NpgsqlDbType.Jsonb },
-                }
-            };
-
-            log.Num = (int)(await command.ExecuteScalarAsync(cancellationToken))!;
+            var id = reader.GetFieldValue<Guid>("id");
+            logs[id].Num = reader.GetInt32("num");
         }
-
-        await transaction.CommitAsync(cancellationToken);
     }
 
     public async IAsyncEnumerable<AuditLog> GetAsync(

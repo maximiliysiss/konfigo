@@ -100,44 +100,51 @@ VALUES
 
     public async Task UpdateAsync(ConfigEntry[] entry, CancellationToken cancellationToken)
     {
+        if (entry is [])
+            return;
+
         const string query = @"
-UPDATE public.config_entries
-SET updated_at = :updatedAt,
-    raw_value = :rawValue,
-    enum_definition = :enumDefinition,
-    description = :description,
-    group_name = :groupName,
-    group_description = :groupDescription,
-    generation = :generation
-WHERE id = :id;
+UPDATE public.config_entries ce
+SET updated_at = u.updated_at,
+    raw_value = u.raw_value,
+    enum_definition = u.enum_definition,
+    description = u.description,
+    group_name = u.group_name,
+    group_description = u.group_description,
+    generation = u.generation
+FROM UNNEST(
+    :ids::uuid[],
+    :updatedAts::timestamptz[],
+    :rawValues::text[],
+    :enumDefinitions::text[],
+    :descriptions::text[],
+    :groupNames::text[],
+    :groupDescriptions::text[],
+    :generations::integer[]
+) AS u(id, updated_at, raw_value, enum_definition, description, group_name, group_description, generation)
+WHERE ce.id = u.id;
 ";
 
         await using var connection = await connectionFactory.GetConnectionAsync(cancellationToken);
+
+        await using DbCommand command = new DbCommandInitializer(query, connection)
+        {
+            Parameters =
+            {
+                { "ids", entry.Select(x => x.Id.Value).ToArray() },
+                { "updatedAts", entry.Select(x => x.UpdatedAt).ToArray() },
+                { "rawValues", entry.Select(x => x.RawValue).ToArray() },
+                { "enumDefinitions", entry.Select(x => x.EnumDefinition).ToArray() },
+                { "descriptions", entry.Select(x => x.Description).ToArray() },
+                { "groupNames", entry.Select(x => x.GroupName).ToArray() },
+                { "groupDescriptions", entry.Select(x => x.GroupDescription).ToArray() },
+                { "generations", entry.Select(x => x.Generation).ToArray() },
+            }
+        };
+
         await connection.OpenAsync(cancellationToken);
 
-        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-
-        foreach (var item in entry)
-        {
-            await using DbCommand command = new DbCommandInitializer(query, connection, transaction)
-            {
-                Parameters =
-                {
-                    { "id", item.Id.Value },
-                    { "updatedAt", item.UpdatedAt },
-                    { "rawValue", item.RawValue },
-                    { "enumDefinition", item.EnumDefinition },
-                    { "description", item.Description },
-                    { "groupName", item.GroupName },
-                    { "groupDescription", item.GroupDescription },
-                    { "generation", item.Generation },
-                }
-            };
-
-            await command.ExecuteNonQueryAsync(cancellationToken);
-        }
-
-        await transaction.CommitAsync(cancellationToken);
+        await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     public async Task DeleteAsync(ConfigEntry entry, CancellationToken cancellationToken)

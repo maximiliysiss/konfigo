@@ -33,12 +33,6 @@ internal readonly ref struct DbCommandInitializer
 
     public DbParameterCollection Parameters => Command.Parameters;
 
-    public DbTransaction? Transaction
-    {
-        get => Command.Transaction;
-        set => Command.Transaction = value;
-    }
-
     public UpdateRowSource UpdatedRowSource
     {
         get => Command.UpdatedRowSource;
@@ -49,11 +43,10 @@ internal readonly ref struct DbCommandInitializer
     {
     }
 
-    public DbCommandInitializer(string? cmdText, DbConnection connection, DbTransaction? transaction = null)
+    public DbCommandInitializer(string? cmdText, DbConnection connection)
     {
         Command = connection.CreateCommand();
         Command.CommandText = cmdText;
-        Command.Transaction = transaction;
     }
 
     public static implicit operator DbCommand(DbCommandInitializer commandInitializer) => commandInitializer.Command;
