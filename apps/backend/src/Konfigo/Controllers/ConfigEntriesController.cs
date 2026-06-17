@@ -14,6 +14,7 @@ using Konfigo.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using UpdateEntryRequest = Konfigo.Application.Services.Configurations.Models.UpdateEntryRequest;
 
 namespace Konfigo.Controllers;
@@ -24,17 +25,23 @@ namespace Konfigo.Controllers;
 public sealed class ConfigEntriesController : ControllerBase
 {
     private readonly IConfigEntryService _configEntryService;
+
     private readonly IConfigEntryRepository _configEntryRepository;
+
     private readonly ILogger<ConfigEntriesController> _logger;
+
+    private readonly KonfigoAuthenticationOptions _options;
 
     public ConfigEntriesController(
         IConfigEntryService configEntryService,
         IConfigEntryRepository configEntryRepository,
-        ILogger<ConfigEntriesController> logger)
+        ILogger<ConfigEntriesController> logger,
+        IOptions<KonfigoAuthenticationOptions> options)
     {
         _configEntryService = configEntryService;
         _configEntryRepository = configEntryRepository;
         _logger = logger;
+        _options = options.Value;
     }
 
     [HttpGet]
@@ -102,7 +109,7 @@ public sealed class ConfigEntriesController : ControllerBase
             ServiceId: service,
             VersionId: version,
             Requests: request.Select(Map).ToArray(),
-            UpdatedBy: User.GetMemberId());
+            UpdatedBy: User.GetMemberId(_options));
 
         try
         {

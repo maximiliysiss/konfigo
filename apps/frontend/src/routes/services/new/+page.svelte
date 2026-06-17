@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { apiRequest } from '$lib/api';
+	import { apiRequest, getApiErrorMessage } from '$lib/api';
 	import { queueToast } from '$lib/stores/toast';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Card from '$lib/components/ui/Card.svelte';
+	import ErrorCallout from '../../../components/ui/ErrorCallout.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Textarea from '$lib/components/ui/Textarea.svelte';
 
@@ -56,7 +57,7 @@
 			queueToast('Service created successfully.', 'success');
 			await goto(`/services/${service.id}#members`);
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to create service';
+			error = getApiErrorMessage(e, 'Failed to create service');
 		} finally {
 			saving = false;
 		}
@@ -102,7 +103,7 @@
 				</section>
 
 				{#if error}
-					<p class="text-[13px] text-[var(--danger)]">{error}</p>
+					<ErrorCallout message={error} />
 				{/if}
 
 				<div class="flex justify-end gap-3">

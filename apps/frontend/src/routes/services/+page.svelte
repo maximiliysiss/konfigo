@@ -3,13 +3,14 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import { apiRequest } from '$lib/api';
+	import { apiRequest, getApiErrorMessage } from '$lib/api';
 	import type { ApplicationServiceContract, ConfigVersionContract, PageResponse } from '$lib/api';
 	import { canAll, user } from '$lib/stores/auth';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Card from '$lib/components/ui/Card.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import ErrorCallout from '../../components/ui/ErrorCallout.svelte';
 	import { showToast } from '$lib/stores/toast';
 
 	type ServiceItem = ApplicationServiceContract & {
@@ -67,7 +68,7 @@
 
 			services = enriched;
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load services';
+			error = getApiErrorMessage(e, 'Failed to load services');
 			services = [];
 		} finally {
 			loading = false;
@@ -186,7 +187,7 @@
 			{/each}
 		</div>
 	{:else if error}
-		<p class="text-[13px] text-[var(--danger)]">{error}</p>
+		<ErrorCallout message={error} />
 	{:else if services.length === 0}
 		{#if userCanAll}
 			<EmptyState title="No services found" description="Try a different search term or create a new service to start managing configuration.">

@@ -23,6 +23,7 @@ export type ApplicationServiceContract = {
 	description: string | null;
 	repositoryUrl: string | null;
 	contactEmail: string | null;
+	members: string[];
 	createdAt: string;
 	updatedAt: string | null;
 };
@@ -88,6 +89,28 @@ export function markAuthUnavailable(status = 401): never {
 	throw new Error('Access unavailable');
 }
 
+export class ApiError extends Error {
+	constructor(
+		public status: number,
+		message: string
+	) {
+		super(message);
+		this.name = 'ApiError';
+	}
+}
+
+export function getApiErrorMessage(error: unknown, fallback: string): string {
+	if (error instanceof ApiError) {
+		return error.message;
+	}
+
+	if (error instanceof Error && error.message.trim()) {
+		return error.message;
+	}
+
+	return fallback;
+}
+
 export function buildUrl(path: string): string {
 	if (/^https?:\/\//.test(path)) {
 		return path;
@@ -109,6 +132,29 @@ export function buildBackendUrl(path: string): string {
 	return `${backendBase}${normalizedPath}`;
 }
 
+async function readErrorMessage(response: Response): Promise<string> {
+	const text = await response.text();
+	if (!text.trim()) {
+		return response.statusText || 'Request failed';
+	}
+
+	if (!isJsonResponse(response)) {
+		return text;
+	}
+
+	try {
+		const payload = JSON.parse(text) as { title?: unknown; detail?: unknown; message?: unknown; errors?: unknown };
+		const message = payload.detail ?? payload.message ?? payload.title;
+		if (typeof message === 'string' && message.trim()) {
+			return message;
+		}
+	} catch {
+		return text;
+	}
+
+	return text;
+}
+
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
 	const headers = new Headers(init.headers ?? {});
 
@@ -128,12 +174,14 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
 	}
 
 	if (response.status === 403) {
-		throw new Error('Forbidden: you do not have permission to perform this action.');
+		throw new ApiError(
+			403,
+			'You do not have permission to view or change this resource. Contact an administrator if you need access.'
+		);
 	}
 
 	if (!response.ok) {
-		const text = await response.text();
-		throw new Error(text || response.statusText || 'Request failed');
+		throw new ApiError(response.status, await readErrorMessage(response));
 	}
 
 	if (response.status === 204) {

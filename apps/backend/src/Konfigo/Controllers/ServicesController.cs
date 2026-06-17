@@ -16,6 +16,7 @@ using Konfigo.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using AddMemberRequest = Konfigo.Application.Services.ApplicationServices.Models.AddMemberRequest;
 using UpdateServiceRequest = Konfigo.Application.Services.ApplicationServices.Models.UpdateServiceRequest;
 
@@ -31,14 +32,18 @@ public sealed class ServicesController : ControllerBase
 
     private readonly ILogger<ServicesController> _logger;
 
+    private readonly KonfigoAuthenticationOptions _options;
+
     public ServicesController(
         IApplicationsService applicationsService,
         IApplicationsRepository applicationsRepository,
-        ILogger<ServicesController> logger)
+        ILogger<ServicesController> logger,
+        IOptions<KonfigoAuthenticationOptions> options)
     {
         _applicationsService = applicationsService;
         _applicationsRepository = applicationsRepository;
         _logger = logger;
+        _options = options.Value;
     }
 
     [HttpPost("search")]
@@ -49,7 +54,7 @@ public sealed class ServicesController : ControllerBase
         var searchServiceRequest = SearchServiceRequest.Create(
             name: contract.Name,
             pageSize: contract.PageSize,
-            member: User.GetMemberId(),
+            member: User.GetMemberId(_options),
             cursor: pageToken,
             asTracking: false);
 

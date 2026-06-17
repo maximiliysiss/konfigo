@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import { apiRequest } from '$lib/api';
+	import { apiRequest, getApiErrorMessage } from '$lib/api';
 	import type {
 		ApplicationServiceContract,
 		AuditLogContract,
@@ -17,10 +17,11 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import ErrorCallout from '../../../components/ui/ErrorCallout.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import { showToast } from '$lib/stores/toast';
 
-	type TabKey = 'info' | 'versions' | 'audit';
+	type TabKey = 'info' | 'members' | 'versions' | 'audit';
 	type ServiceDetail = ApplicationServiceContract;
 	type VersionDetail = ConfigVersionContract;
 	type AuditEntry = AuditLogContract;
@@ -50,6 +51,9 @@
 	let editRepositoryUrl = $state('');
 	let editContactEmail = $state('');
 	let savingService = $state(false);
+	let memberUserId = $state('');
+	let addingMember = $state(false);
+	let removingMember = $state<string | null>(null);
 
 	let showNewVersionModal = $state(false);
 	let newVersionLabel = $state('');
@@ -69,7 +73,7 @@
 
 	function parseHashToTab(hash: string): TabKey {
 		const key = hash.replace('#', '').toLowerCase();
-		if (key === 'info' || key === 'versions' || key === 'audit') return key;
+		if (key === 'info' || key === 'members' || key === 'versions' || key === 'audit') return key;
 		return 'info';
 	}
 
@@ -84,6 +88,10 @@
 
 	function latestVersion(): VersionDetail | null {
 		return versions[0] ?? null;
+	}
+
+	function serviceMembers(): string[] {
+		return [...(service?.members ?? [])].sort((a, b) => a.localeCompare(b));
 	}
 
 	async function openLatestVersion() {
@@ -154,7 +162,7 @@
 			}
 			if (tab === 'audit') await loadAudit(auditPage);
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load service';
+			error = getApiErrorMessage(e, 'Failed to load service');
 		} finally {
 			loading = false;
 		}
@@ -192,9 +200,44 @@
 			showEdit = false;
 			await loadService();
 		} catch (e) {
-			actionError = e instanceof Error ? e.message : 'Failed to save service';
+			actionError = getApiErrorMessage(e, 'Failed to save service');
 		} finally {
 			savingService = false;
+		}
+	}
+
+	async function addMember() {
+		if (!service || !memberUserId.trim()) return;
+		actionError = '';
+		addingMember = true;
+		try {
+			await apiRequest<unknown>(`/services/${service.id}/members?userId=${encodeURIComponent(memberUserId.trim())}`, {
+				method: 'POST'
+			});
+			memberUserId = '';
+			await loadService();
+			showToast('Member added', 'success');
+		} catch (e) {
+			actionError = getApiErrorMessage(e, 'Failed to add member');
+		} finally {
+			addingMember = false;
+		}
+	}
+
+	async function removeMember(userId: string) {
+		if (!service) return;
+		actionError = '';
+		removingMember = userId;
+		try {
+			await apiRequest<unknown>(`/services/${service.id}/members?userId=${encodeURIComponent(userId)}`, {
+				method: 'DELETE'
+			});
+			await loadService();
+			showToast('Member removed', 'success');
+		} catch (e) {
+			actionError = getApiErrorMessage(e, 'Failed to remove member');
+		} finally {
+			removingMember = null;
 		}
 	}
 
@@ -216,7 +259,7 @@
 			basedOnVersionId = '';
 			await loadVersions();
 		} catch (e) {
-			actionError = e instanceof Error ? e.message : 'Failed to create version';
+			actionError = getApiErrorMessage(e, 'Failed to create version');
 		} finally {
 			creatingVersion = false;
 		}
@@ -350,7 +393,7 @@
 		<div class="h-64 animate-pulse rounded-[12px] border border-[var(--border)] bg-[var(--bg-surface)]"></div>
 	</div>
 {:else if error}
-	<p class="text-[13px] text-[var(--danger)]">{error}</p>
+	<ErrorCallout message={error} />
 {:else if service}
 	<section class="space-y-6">
 		<div class="page-header">
@@ -376,11 +419,13 @@
 			</div>
 			<div class="flex flex-wrap gap-2">
 				<span class="metric-pill">{versions.length} versions</span>
+				<span class="metric-pill">{service.members?.length ?? 0} members</span>
 			</div>
 		</div>
 
 		<div class="flex flex-wrap gap-2">
 			<button class={`tab-pill ${tab === 'info' ? 'active' : ''}`} onclick={() => setTab('info')}>Info</button>
+			<button class={`tab-pill ${tab === 'members' ? 'active' : ''}`} onclick={() => setTab('members')}>Members</button>
 			<button class={`tab-pill ${tab === 'versions' ? 'active' : ''}`} onclick={() => setTab('versions')}>Versions</button>
 			<button class={`tab-pill ${tab === 'audit' ? 'active' : ''}`} onclick={() => setTab('audit')}>Audit</button>
 		</div>
@@ -442,6 +487,60 @@
 							</div>
 						</div>
 					{/if}
+				</Card>
+			{:else if tab === 'members'}
+				<Card>
+					{#snippet header()}
+						<div class="flex flex-wrap items-center justify-between gap-3">
+							<div>
+								<p class="section-label">Access</p>
+								<h2 class="mt-2 text-[20px] font-semibold">Members</h2>
+							</div>
+							<Badge>{serviceMembers().length} total</Badge>
+						</div>
+					{/snippet}
+
+					<div class="space-y-6">
+						{#if userCanAll}
+							<form
+								class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]"
+								onsubmit={(event) => {
+									event.preventDefault();
+									void addMember();
+								}}
+							>
+								<Input label="User ID" placeholder="user@example.com or identity provider ID" bind:value={memberUserId} />
+								<div class="flex items-end">
+									<Button type="submit" loading={addingMember} disabled={!memberUserId.trim()}>Add member</Button>
+								</div>
+							</form>
+						{/if}
+
+						{#if serviceMembers().length === 0}
+							<EmptyState title="No members yet" description="Add members to grant access to this service." />
+						{:else}
+							<div class="divide-y divide-[var(--border)] rounded-[8px] border border-[var(--border)] bg-[var(--bg-elevated)]">
+								{#each serviceMembers() as member}
+									<div class="flex flex-wrap items-center justify-between gap-3 p-4">
+										<div class="min-w-0">
+											<p class="break-words font-mono text-[13px] text-[var(--text-primary)]">{member}</p>
+										</div>
+										{#if userCanAll}
+											<Button
+												variant="danger"
+												size="sm"
+												loading={removingMember === member}
+												disabled={removingMember !== null}
+												onclick={() => removeMember(member)}
+											>
+												Remove
+											</Button>
+										{/if}
+									</div>
+								{/each}
+							</div>
+						{/if}
+					</div>
 				</Card>
 			{:else if tab === 'versions'}
 				<Card>
@@ -542,7 +641,7 @@
 		</div>
 
 		{#if actionError}
-			<p class="text-[13px] text-[var(--danger)]">{actionError}</p>
+			<ErrorCallout message={actionError} />
 		{/if}
 	</section>
 {/if}

@@ -4,7 +4,7 @@
 	import { page } from '$app/stores';
 	import { HubConnectionBuilder, LogLevel, type HubConnection } from '@microsoft/signalr';
 	import { onMount } from 'svelte';
-	import { apiRequest, buildBackendUrl, CONFIG_VALUE_TYPE } from '$lib/api';
+	import { apiRequest, buildBackendUrl, CONFIG_VALUE_TYPE, getApiErrorMessage } from '$lib/api';
 	import type {
 		ApplicationServiceContract,
 		AuditLogContract,
@@ -23,6 +23,7 @@
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import ErrorCallout from '../../../../../components/ui/ErrorCallout.svelte';
 
 	type ConfigEntry = ConfigEntryContract;
 
@@ -586,7 +587,7 @@
 			showEdit = false;
 			await loadServiceDetails();
 		} catch (e) {
-			actionError = e instanceof Error ? e.message : 'Failed to save service';
+			actionError = getApiErrorMessage(e, 'Failed to save service');
 		} finally {
 			savingService = false;
 		}
@@ -617,7 +618,7 @@
 			audit = payload.entities;
 			auditNextPageToken = payload.nextPageToken ?? '';
 		} catch (e) {
-			actionError = e instanceof Error ? e.message : 'Failed to load audit log';
+			actionError = getApiErrorMessage(e, 'Failed to load audit log');
 		} finally {
 			auditLoading = false;
 		}
@@ -757,7 +758,7 @@
 			versions = sortVersions(versionList);
 			applyEntries(entryData);
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load entries';
+			error = getApiErrorMessage(e, 'Failed to load entries');
 		} finally {
 			loading = false;
 		}
@@ -786,7 +787,7 @@
 			applyEntries(entryData);
 		} catch (e) {
 			if (requestKey !== activePageKey) return;
-			entriesError = e instanceof Error ? e.message : 'Failed to load entries';
+			entriesError = getApiErrorMessage(e, 'Failed to load entries');
 		} finally {
 			if (requestKey === activePageKey) entriesLoading = false;
 		}
@@ -852,7 +853,7 @@
 			}
 			showPanel = false;
 		} catch (e) {
-			actionError = e instanceof Error ? e.message : 'Failed to save entry';
+			actionError = getApiErrorMessage(e, 'Failed to save entry');
 		} finally {
 			saving = false;
 		}
@@ -876,7 +877,7 @@
 			confirmDeleteOpen = false;
 			pendingDelete = null;
 		} catch (e) {
-			actionError = e instanceof Error ? e.message : 'Failed to delete entry';
+			actionError = getApiErrorMessage(e, 'Failed to delete entry');
 		} finally {
 			deleting = false;
 		}
@@ -954,7 +955,7 @@
 			cancelInlineEdit();
 			pushToast('Config changes saved');
 		} catch (e) {
-			actionError = e instanceof Error ? e.message : 'Failed to save changes';
+			actionError = getApiErrorMessage(e, 'Failed to save changes');
 		} finally {
 			batchSaving = false;
 		}
@@ -1204,9 +1205,9 @@
 			<div class="h-52 animate-pulse rounded-[12px] border border-[var(--border)] bg-[var(--bg-surface)]"></div>
 		</div>
 	{:else if error}
-		<div class="error-callout">{error}</div>
+		<ErrorCallout message={error} />
 	{:else if entriesError}
-		<div class="error-callout">{entriesError}</div>
+		<ErrorCallout message={entriesError} />
 	{:else if groupedEntries.length === 0}
 		<EmptyState title={showOnlyChanged ? 'No changed config entries' : 'No config entries yet'} description={showOnlyChanged ? 'Change values first, then enable this filter to review them before saving.' : 'Create the first key for this version or let the SDK register missing keys automatically.'}>
 			{#snippet icon()}
@@ -1555,7 +1556,7 @@
 		</div>
 
 		{#if actionError}
-			<div class="error-callout">{actionError}</div>
+			<ErrorCallout message={actionError} />
 		{/if}
 	</section>
 
@@ -2043,17 +2044,6 @@
 	.field-error {
 		display: block;
 		font-size: 12px;
-		color: var(--danger);
-	}
-
-	.error-callout {
-		border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--border));
-		border-left: 4px solid var(--danger);
-		border-radius: 8px;
-		background: var(--danger-subtle);
-		padding: 10px 12px;
-		font-size: 13px;
-		font-weight: 500;
 		color: var(--danger);
 	}
 

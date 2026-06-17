@@ -8,6 +8,7 @@ using Konfigo.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Konfigo.Authorization;
 
@@ -17,10 +18,16 @@ internal sealed class ServiceAccessActionFilter : IAsyncActionFilter
 
     private readonly ILogger<ServiceAccessActionFilter> _logger;
 
-    public ServiceAccessActionFilter(IApplicationsRepository repository, ILogger<ServiceAccessActionFilter> logger)
+    private readonly KonfigoAuthenticationOptions _options;
+
+    public ServiceAccessActionFilter(
+        IApplicationsRepository repository,
+        ILogger<ServiceAccessActionFilter> logger,
+        IOptions<KonfigoAuthenticationOptions> options)
     {
         _repository = repository;
         _logger = logger;
+        _options = options.Value;
     }
 
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
@@ -57,7 +64,7 @@ internal sealed class ServiceAccessActionFilter : IAsyncActionFilter
                 return;
             }
 
-            var userId = context.HttpContext.User.GetMemberId();
+            var userId = context.HttpContext.User.GetMemberId(_options);
 
             if (userId is not null && !service.Members.Contains(userId.Value))
             {
