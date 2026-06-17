@@ -35,6 +35,8 @@ public sealed class GetServiceTests : IAsyncLifetime
         var created = await client.CreateServiceAsync(new CreateOrUpdateServiceRequest { Name = name });
         _serviceDbHelper.Track(created.Id);
 
+        await client.AddMemberAsync(created.Id, Guid.NewGuid());
+
         // Act
         var service = await client.GetServiceAsync(created.Id);
 

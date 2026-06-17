@@ -14,6 +14,7 @@ public sealed class ApplicationService : EntityBase<ServiceId>
     public string? RepositoryUrl { get; set; }
     public string? ContactEmail { get; set; }
     public HashSet<UserId> Members { get; set; } = [];
+
     public ICollection<ConfigVersion> ConfigVersions { get; set; } = [];
 
     public void Update(UpdateServiceRequest request, DateTimeOffset now)

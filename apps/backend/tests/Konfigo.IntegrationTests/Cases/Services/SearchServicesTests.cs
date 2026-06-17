@@ -49,11 +49,16 @@ public sealed class SearchServicesTests : IAsyncLifetime
     {
         // Arrange
         using var admin = _fixture.CreateAdminClient();
+
         var marker = $"svc-search-{Guid.NewGuid():N}";
+        var userId = Guid.NewGuid();
+
         var created = await admin.CreateServiceAsync(new CreateOrUpdateServiceRequest { Name = marker });
+        await admin.AddMemberAsync(created.Id, userId);
+
         _serviceDbHelper.Track(created.Id);
 
-        using var client = _fixture.CreateAuthenticatedClient(roles: "developer", services: string.Empty);
+        using var client = _fixture.CreateAuthenticatedClient(roles: "developer", services: string.Empty, userId: userId);
         var request = new SearchServicesRequest { Name = marker, PageSize = 10 };
 
         // Act

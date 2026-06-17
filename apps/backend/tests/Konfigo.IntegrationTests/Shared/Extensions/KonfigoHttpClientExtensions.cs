@@ -5,6 +5,7 @@ using Konfigo.Controllers.Models.Audit;
 using Konfigo.Controllers.Models.Entry;
 using Konfigo.Controllers.Models.Services;
 using Konfigo.Controllers.Models.Versions;
+using Konfigo.Domain.ValueType;
 using Konfigo.IntegrationTests.Shared.Responses;
 
 namespace Konfigo.IntegrationTests.Shared.Extensions;
@@ -46,6 +47,24 @@ public static class KonfigoHttpClientExtensions
 
     public static Task<HttpResponseMessage> SendGetServiceAsync(this HttpClient client, Guid serviceId) =>
         client.GetAsync($"/api/services/{serviceId}");
+
+    public static async Task AddMemberAsync(this HttpClient client, Guid serviceId, Guid userId)
+    {
+        var response = await client.SendAddMemberAsync(serviceId, userId);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public static async Task RemoveMemberAsync(this HttpClient client, Guid serviceId, Guid userId)
+    {
+        var response = await client.SendRemoveMemberAsync(serviceId, userId);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public static Task<HttpResponseMessage> SendAddMemberAsync(this HttpClient client, Guid serviceId, Guid userId)
+        => client.PostAsync($"/api/services/{serviceId}/members?userId={userId}", null);
+
+    public static Task<HttpResponseMessage> SendRemoveMemberAsync(this HttpClient client, Guid serviceId, Guid userId)
+        => client.DeleteAsync($"/api/services/{serviceId}/members?userId={userId}");
 
     public static async Task<ServiceResponse?> GetServiceAsync(this HttpClient client, Guid serviceId)
     {

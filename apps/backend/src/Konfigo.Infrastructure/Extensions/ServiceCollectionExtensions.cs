@@ -3,6 +3,7 @@ using System.Data.Common;
 using Konfigo.Application.Repositories;
 using Konfigo.Infrastructure.Persistence;
 using Konfigo.Infrastructure.Persistence.Factory;
+using Konfigo.Infrastructure.Persistence.Interceptors;
 using Konfigo.Infrastructure.Persistence.Migrations.Initializer;
 using Konfigo.Infrastructure.Persistence.Migrations.Services;
 using Konfigo.Infrastructure.Persistence.Repositories;
@@ -54,6 +55,9 @@ public static class ServiceCollectionExtensions
         services
             .TryAddSingleton<IDatabaseInitializer, DatabaseInitializer>();
 
+        services
+            .TryAddSingleton<MembersShadowSyncInterceptor>();
+
         return services;
 
         static IDistributedLockProvider ConfigureLock(IServiceProvider serviceProvider)
@@ -77,6 +81,10 @@ public static class ServiceCollectionExtensions
         }
 
         static DbContextOptionsBuilder ConfigureDbContext(DbContextOptionsBuilder opt, IServiceProvider sp)
-            => opt.UseNpgsql(sp.GetRequiredService<DbDataSource>());
+        {
+            return opt
+                .AddInterceptors(sp.GetRequiredService<MembersShadowSyncInterceptor>())
+                .UseNpgsql(sp.GetRequiredService<DbDataSource>());
+        }
     }
 }

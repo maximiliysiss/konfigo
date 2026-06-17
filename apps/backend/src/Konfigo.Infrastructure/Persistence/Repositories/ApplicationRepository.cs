@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -16,13 +17,13 @@ internal sealed class ApplicationRepository(AppDbContext context) : IApplication
         IQueryable<ApplicationService> query = context.ApplicationServices;
 
         if (request.Ids is [_, ..])
-            query = query.Where(x => request.Ids.Contains(x.Id));
+            query = query.Where(x => Enumerable.Contains(request.Ids, x.Id));
 
         if (!string.IsNullOrWhiteSpace(request.Name))
             query = query.Where(x => x.Name.Contains(request.Name));
 
         if (request.Member is not null)
-            query = query.Where(x => x.Members.Contains(request.Member.Value));
+            query = query.Where(x => EF.Property<List<string>>(x, "_members").Contains(request.Member.Value.Value));
 
         query = query
             .Where(x => x.Num < request.Cursor.Num)

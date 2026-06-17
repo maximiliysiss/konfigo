@@ -138,7 +138,7 @@ public sealed class ServicesController : ControllerBase
 
     [Authorize(Policy = AuthorizationPolicyNames.CanAll)]
     [HttpDelete("{serviceId:guid}")]
-    public async Task Delete(Guid serviceId, CancellationToken cancellationToken)
+    public async Task Delete([FromRoute] Guid serviceId, CancellationToken cancellationToken)
     {
         var deleteServiceRequest = new DeleteServiceRequest(
             Id: new ServiceId(serviceId),
@@ -148,8 +148,8 @@ public sealed class ServicesController : ControllerBase
     }
 
     [Authorize(Policy = AuthorizationPolicyNames.CanAll)]
-    [HttpPost("{serviceId:guid}/members/{userId}")]
-    public async Task AddMember(Guid serviceId, string userId, CancellationToken cancellationToken)
+    [HttpPost("{serviceId:guid}/members")]
+    public async Task AddMember([FromRoute] Guid serviceId, [FromQuery] string userId, CancellationToken cancellationToken)
     {
         await _applicationsService.AddMemberAsync(
             request: new AddMemberRequest(new ServiceId(serviceId), new UserId(userId), User.GetId()),
@@ -157,8 +157,8 @@ public sealed class ServicesController : ControllerBase
     }
 
     [Authorize(Policy = AuthorizationPolicyNames.CanAll)]
-    [HttpDelete("{serviceId:guid}/members/{userId}")]
-    public async Task DeleteMember(Guid serviceId, string userId, CancellationToken cancellationToken)
+    [HttpDelete("{serviceId:guid}/members")]
+    public async Task DeleteMember([FromRoute] Guid serviceId, [FromQuery] string userId, CancellationToken cancellationToken)
     {
         await _applicationsService.RemoveMemberAsync(
             request: new RemoveMemberRequest(new ServiceId(serviceId), new UserId(userId), User.GetId()),

@@ -31,19 +31,12 @@ internal sealed class ApplicationServiceConfiguration : IEntityTypeConfiguration
         builder.Property(x => x.RepositoryUrl).HasColumnName("repository_url");
         builder.Property(x => x.ContactEmail).HasColumnName("contact_email");
 
-        var converter = new ValueConverter<HashSet<UserId>, string[]>(
-            v => v.Select(x => x.Value).ToArray(),
-            v => v.Select(x => new UserId(x)).ToHashSet());
-
-        var comparer = new ValueComparer<HashSet<UserId>>(
-            (a, b) => a!.SetEquals(b!),
-            v => v.Aggregate(0, (h, e) => HashCode.Combine(h, e.Value.GetHashCode())),
-            v => v.ToHashSet());
+        builder.Ignore(x => x.Members);
 
         builder
-            .Property(x => x.Members)
+            .PrimitiveCollection<List<string>>("_members")
             .HasColumnName("members")
-            .HasConversion(converter, comparer)
+            .UsePropertyAccessMode(PropertyAccessMode.Field)
             .HasColumnType("text[]");
 
         builder
