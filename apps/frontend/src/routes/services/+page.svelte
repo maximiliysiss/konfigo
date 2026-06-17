@@ -9,6 +9,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Card from '$lib/components/ui/Card.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import ErrorCallout from '../../components/ui/ErrorCallout.svelte';
 	import { showToast } from '$lib/stores/toast';
@@ -142,15 +143,22 @@
 		return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(value));
 	}
 
+	function isRecentlyUpdated(value: string | null | undefined): boolean {
+		if (!value) return false;
+		const timestamp = new Date(value).valueOf();
+		if (Number.isNaN(timestamp)) return false;
+		return Date.now() - timestamp < 1000 * 60 * 60 * 24 * 7;
+	}
+
 	const userCanAll = $derived(canAll($user));
 </script>
 
 <section class="space-y-6">
-	<div class="page-header border-l-2 border-[var(--ink)] pl-5">
+	<div class="page-header">
 		<div class="max-w-[620px]">
 			<p class="section-label">Inventory</p>
 			<h1 class="page-title mt-2">Services</h1>
-			<p class="page-subtitle">Browse every service, inspect ownership, and jump into versioned configuration.</p>
+			<p class="page-subtitle">Browse services, inspect ownership, and jump into live versioned configuration.</p>
 		</div>
 		{#if userCanAll}
 			<a href="/services/new">
@@ -227,6 +235,9 @@
 									<h2 class="service-title">{service.name}</h2>
 									<p class="service-updated">Updated {formatServiceDate(service.updatedAt ?? service.createdAt)}</p>
 								</div>
+								{#if isRecentlyUpdated(service.updatedAt ?? service.createdAt)}
+									<Badge variant="accent" className="service-recent-badge">Recent</Badge>
+								{/if}
 							</div>
 
 							<div class="service-card-main">
@@ -356,21 +367,17 @@
 	:global(.service-card) {
 		position: relative;
 		height: 100%;
-		border-color: color-mix(in srgb, var(--border) 82%, transparent);
-		background:
-			linear-gradient(135deg, color-mix(in srgb, var(--bg-elevated) 92%, transparent), color-mix(in srgb, var(--bg-surface) 96%, transparent)),
-			var(--bg-surface);
+		border-color: var(--border);
+		background: var(--bg-surface);
 		transition:
 			border-color 180ms ease,
-			box-shadow 180ms ease,
-			transform 180ms ease;
+			background-color 180ms ease;
 	}
 
 	:global(.group:hover .service-card),
 	:global(.group:focus-visible .service-card) {
-		transform: translateY(-3px);
-		border-color: color-mix(in srgb, var(--accent) 62%, var(--border-strong));
-		box-shadow: 0 20px 44px color-mix(in srgb, var(--ink) 12%, transparent);
+		border-color: color-mix(in srgb, var(--accent) 62%, var(--border));
+		background: color-mix(in srgb, var(--bg-elevated) 48%, var(--bg-surface));
 	}
 
 	.service-card-content {
@@ -392,22 +399,24 @@
 	}
 
 	.service-avatar {
-		width: 42px;
-		height: 42px;
+		width: 40px;
+		height: 40px;
 		flex: 0 0 auto;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		border-radius: 8px;
-		border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
-		background:
-			linear-gradient(145deg, color-mix(in srgb, var(--accent-subtle) 78%, var(--bg-elevated)), var(--bg-elevated));
+		border: 1px solid var(--border);
+		background: var(--bg-elevated);
 		color: var(--accent-text);
 		font-family: 'JetBrains Mono', monospace;
 		font-size: 13px;
 		font-weight: 700;
 		letter-spacing: 0;
-		box-shadow: inset 0 1px 0 color-mix(in srgb, white 52%, transparent);
+	}
+
+	:global(.service-recent-badge) {
+		flex: 0 0 auto;
 	}
 
 	.service-card-heading {
@@ -460,8 +469,8 @@
 		justify-content: center;
 		gap: 5px;
 		border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
-		border-radius: 8px;
-		background: color-mix(in srgb, var(--bg-subtle) 56%, transparent);
+		border-radius: var(--radius-md);
+		background: var(--bg-elevated);
 		padding: 10px;
 	}
 
@@ -498,8 +507,8 @@
 		align-items: center;
 		gap: 10px;
 		border: 1px solid color-mix(in srgb, var(--border) 66%, transparent);
-		border-radius: 8px;
-		background: color-mix(in srgb, var(--bg-elevated) 66%, transparent);
+		border-radius: var(--radius-md);
+		background: var(--bg-elevated);
 		padding: 9px 10px;
 	}
 

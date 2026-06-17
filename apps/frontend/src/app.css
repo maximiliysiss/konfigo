@@ -667,18 +667,18 @@
 	gap: 0.5rem;
 	height: 40px;
 	border-radius: 8px;
-	border: 1px solid var(--ink);
-	background: var(--ink);
-	color: var(--bg-surface);
+	border: 1px solid var(--accent);
+	background: var(--accent);
+	color: white;
 	font-size: 13px;
 	font-weight: 500;
 	transition: background-color 150ms ease-out, transform 150ms ease-out;
 }
 
 .login-sso-button:hover {
-	background: var(--accent);
-	border-color: var(--accent);
-	color: #001f19;
+	background: var(--accent-hover);
+	border-color: var(--accent-hover);
+	color: white;
 }
 
 .login-sso-button:active {

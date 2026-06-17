@@ -69,7 +69,7 @@
 </script>
 
 <section class="space-y-6">
-	<div class="page-header border-l-2 border-[var(--ink)] pl-5">
+	<div class="page-header">
 		<div>
 			<p class="section-label">Provision</p>
 			<h1 class="page-title mt-2">Create service</h1>
