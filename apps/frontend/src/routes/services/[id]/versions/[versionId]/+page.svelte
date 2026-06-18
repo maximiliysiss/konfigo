@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { goto } from '$app/navigation';
 	import { PUBLIC_SIGNALR_URL } from '$env/static/public';
 	import { page } from '$app/stores';
 	import { HubConnectionBuilder, LogLevel, type HubConnection } from '@microsoft/signalr';
@@ -39,7 +40,7 @@
 	type VersionDetail = ConfigVersionContract;
 
 	type ServiceDetail = ApplicationServiceContract;
-	type MainTabKey = 'info' | 'versions' | 'audit';
+	type MainTabKey = 'info' | 'members' | 'versions' | 'audit';
 	type AuditEntry = AuditLogContract;
 	type AuditDetail = { label: string; value: string };
 	type AuditSummary = {
@@ -114,6 +115,11 @@
 	let editContactEmail = $state('');
 	let savingService = $state(false);
 
+	let showNewVersionModal = $state(false);
+	let newVersionLabel = $state('');
+	let newVersionDescription = $state('');
+	let creatingVersion = $state(false);
+
 	let confirmDeleteOpen = $state(false);
 	let deleting = $state(false);
 	let pendingDelete: ConfigEntry | null = $state(null);
@@ -128,7 +134,6 @@
 	let activePageKey = '';
 	let collapsedGroups = $state<Record<string, boolean>>({});
 	let changedRows = $state<Record<string, number>>({});
-	let subscriptionPulse = $state(false);
 
 	const serviceId = $derived($page.params.id ?? '');
 	const versionId = $derived($page.params.versionId ?? '');
@@ -140,12 +145,6 @@
 	const pendingEntries = $derived(entries.filter((entry) => isEntryChanged(entry)));
 	const pendingCount = $derived(pendingEntries.length);
 	const canBatchSave = $derived(showOnlyChanged && pendingCount > 0 && !batchSaving);
-	const connectionStatusLabel = $derived.by(() => {
-		if (connectionStatus === 'live') return 'Live';
-		if (connectionStatus === 'connecting') return 'Connecting';
-		if (connectionStatus === 'reconnecting') return 'Reconnecting';
-		return 'Offline';
-	});
 
 	const knownGroups = $derived.by(() => {
 		const groups = new Map<string, string>();
@@ -220,22 +219,6 @@
 
 	function versionHref(nextVersionId: string): string {
 		return `/services/${serviceId}/versions/${nextVersionId}`;
-	}
-
-	function serviceTabHref(tab: MainTabKey): string {
-		if (tab === 'versions') return versionHref(versionId);
-		return `/services/${serviceId}#${tab}`;
-	}
-
-	function replaceVisibleUrl(url: string) {
-		if (!browser || window.location.pathname + window.location.hash === url) return;
-		window.history.pushState(null, '', url);
-	}
-
-	function setMainTab(nextTab: MainTabKey) {
-		mainTab = nextTab;
-		replaceVisibleUrl(serviceTabHref(nextTab));
-		if (nextTab === 'audit' && audit.length === 0) void loadAudit(auditPage);
 	}
 
 	function collapseStorageKey(groupName: string): string {
@@ -522,17 +505,75 @@
 		showPanel = true;
 	}
 
+	function suggestSuccessorLabel(label?: string | null): string {
+		const normalized = label?.trim();
+		if (!normalized) return '';
+		const match = normalized.match(/^(.*?)(\d+)$/);
+		if (!match) return `${normalized}-next`;
+
+		const [, prefix, digits] = match;
+		const nextNumber = String(Number(digits) + 1).padStart(digits.length, '0');
+		return `${prefix}${nextNumber}`;
+	}
+
+	function openCreateSuccessorModal() {
+		if (!userCanAll || !version) return;
+		newVersionLabel = suggestSuccessorLabel(version.versionLabel);
+		newVersionDescription = version.description ?? '';
+		actionError = '';
+		showNewVersionModal = true;
+	}
+
+	async function createSuccessorVersion() {
+		if (!service || !newVersionLabel.trim()) return;
+		actionError = '';
+		creatingVersion = true;
+
+		try {
+			const createdVersion = await apiRequest<VersionDetail>(`/configversions/${service.id}`, {
+				method: 'POST',
+				body: JSON.stringify({
+					versionLabel: newVersionLabel.trim(),
+					description: newVersionDescription
+				})
+			});
+
+			for (const entry of entries) {
+				await apiRequest<ConfigEntry>(`/configentries/${service.id}/${createdVersion.id}`, {
+					method: 'POST',
+					body: JSON.stringify({
+						key: entry.key,
+						name: entry.name || entry.key,
+						rawValue: entry.rawValue,
+						valueType: normalizeValueType(entry.valueType),
+						enumDefinition: entry.enumDefinition,
+						description: entry.description,
+						groupName: normalizedGroupName(entry.groupName) || null,
+						groupDescription: normalizedGroupName(entry.groupName) ? entry.groupDescription : null
+					})
+				});
+			}
+
+			showNewVersionModal = false;
+			newVersionLabel = '';
+			newVersionDescription = '';
+			versions = sortVersions([...versions, createdVersion]);
+			pushToast('Successor version created');
+			await goto(versionHref(createdVersion.id));
+		} catch (e) {
+			actionError = getApiErrorMessage(e, 'Failed to create successor version');
+		} finally {
+			creatingVersion = false;
+		}
+	}
+
 	function markChanged(key: string) {
 		changedRows = { ...changedRows, [key]: Date.now() };
-		subscriptionPulse = true;
 		setTimeout(() => {
 			const next = { ...changedRows };
 			delete next[key];
 			changedRows = next;
 		}, 1000);
-		setTimeout(() => {
-			subscriptionPulse = false;
-		}, 1200);
 	}
 
 	function upsertLocalEntry(entry: ConfigEntry) {
@@ -561,15 +602,6 @@
 		setTimeout(() => {
 			toasts = toasts.filter((x) => x.id !== id);
 		}, 2600);
-	}
-
-	async function copyServiceId() {
-		try {
-			await navigator.clipboard.writeText(service?.id ?? serviceId);
-			pushToast('Service ID copied');
-		} catch {
-			pushToast('Failed to copy service ID');
-		}
 	}
 
 	function prettyDate(value?: string | null): string {
@@ -1095,38 +1127,6 @@
 </script>
 
 <section class={`space-y-6 ${pendingCount > 0 ? 'pb-28' : ''}`}>
-	<div class="page-header">
-		<div>
-			<p class="section-label">Service</p>
-			<h1 class="page-title">{service?.name ?? 'Service'}</h1>
-			<div class="service-id-pill mt-2">
-				<span class="font-mono" title={service?.id ?? serviceId}>{service?.id ?? serviceId}</span>
-				<button
-					class="copy-id-button"
-					type="button"
-					aria-label="Copy service ID"
-					title="Copy service ID"
-					onclick={copyServiceId}
-				>
-					<svg viewBox="0 0 16 16" class="h-3.5 w-3.5" fill="none" aria-hidden="true">
-						<rect x="6" y="5" width="7" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4" />
-						<path d="M4 10.5H3.5A1.5 1.5 0 0 1 2 9V3.5A1.5 1.5 0 0 1 3.5 2H9a1.5 1.5 0 0 1 1.5 1.5V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
-					</svg>
-				</button>
-			</div>
-			<p class="page-subtitle">{service?.description ?? 'No service description provided.'}</p>
-		</div>
-		<div class="flex flex-wrap gap-2">
-			<span class="metric-pill">{versions.length} versions</span>
-		</div>
-	</div>
-
-	<div class="flex flex-wrap gap-2">
-		<button class={`tab-pill ${mainTab === 'info' ? 'active' : ''}`} type="button" onclick={() => setMainTab('info')}>Info</button>
-		<button class={`tab-pill ${mainTab === 'versions' ? 'active' : ''}`} type="button" onclick={() => setMainTab('versions')}>Versions</button>
-		<button class={`tab-pill ${mainTab === 'audit' ? 'active' : ''}`} type="button" onclick={() => setMainTab('audit')}>Audit</button>
-	</div>
-
 	<div class="pt-2">
 		{#if mainTab === 'info'}
 			<Card>
@@ -1191,21 +1191,19 @@
 					<p class="section-label">Config</p>
 					<div class="mt-2 flex flex-wrap items-center gap-3">
 						<h2 class="text-[20px] font-semibold">Versions</h2>
-						<span class={`live-status live-${connectionStatus}`} role="status" aria-live="polite">
-							<span class={`live-status-dot ${subscriptionPulse ? 'pulse' : ''}`}></span>
-							{connectionStatusLabel}
-						</span>
 						{#if pendingCount > 0}
 							<span class="metric-pill">{pendingCount} unsaved</span>
 						{/if}
 					</div>
-					<p class="mt-1 text-[13px] text-[var(--text-secondary)]">
-						{version?.versionLabel ?? 'Version'}{version?.description ? ` · ${version.description}` : ''}
-					</p>
+					<div class="mt-1 flex flex-wrap items-center gap-2">
+						<p class="text-[13px] text-[var(--text-secondary)]">
+							{version?.versionLabel ?? 'Version'}{version?.description ? ` · ${version.description}` : ''}
+						</p>
+						{#if userCanAll && versions.length > 0}
+							<Button variant="secondary" size="sm" onclick={openCreateSuccessorModal}>Create successor</Button>
+						{/if}
+					</div>
 				</div>
-				{#if userCanAll}
-					<Button size="lg" onclick={() => openCreatePanel()}>Add entry</Button>
-				{/if}
 			</div>
 
 			{#if versions.length > 0}
@@ -1613,6 +1611,25 @@
 	</div>
 {/if}
 
+{#if userCanAll}
+	<Modal title="Create successor" open={showNewVersionModal} onclose={() => (showNewVersionModal = false)}>
+		<div class="space-y-5">
+			<Input label="Version label" placeholder="e.g. v1.2.0" bind:value={newVersionLabel} />
+			<Textarea label="Description" bind:value={newVersionDescription} />
+			<div class="rounded-[10px] border border-[var(--border)] bg-[var(--bg-subtle)] px-4 py-3 text-[13px] text-[var(--text-secondary)]">
+				Entries from {version?.versionLabel ?? 'the current version'} will be copied into the new version.
+			</div>
+		</div>
+
+		{#snippet footerContent()}
+			<div class="flex justify-end gap-3">
+				<Button variant="ghost" onclick={() => (showNewVersionModal = false)}>Cancel</Button>
+				<Button loading={creatingVersion} disabled={!newVersionLabel.trim()} onclick={createSuccessorVersion}>Create version</Button>
+			</div>
+		{/snippet}
+	</Modal>
+{/if}
+
 <Modal title={panelMode === 'create' ? 'Add entry' : 'Edit entry'} open={showPanel} onclose={() => (showPanel = false)}>
 	<div class="space-y-5">
 		{#if isMemberEditingExistingEntry}
@@ -1860,76 +1877,6 @@
 </div>
 
 <style>
-	.service-id-pill {
-		display: inline-flex;
-		max-width: 100%;
-		align-items: center;
-		gap: 6px;
-		border: 1px solid var(--border);
-		border-radius: 7px;
-		background: var(--bg-subtle);
-		padding: 3px 4px 3px 8px;
-		color: var(--text-secondary);
-		font-size: 11px;
-		overflow-wrap: anywhere;
-	}
-
-	.copy-id-button {
-		display: inline-flex;
-		height: 22px;
-		width: 22px;
-		flex: 0 0 auto;
-		align-items: center;
-		justify-content: center;
-		border-radius: 5px;
-		color: var(--text-tertiary);
-		transition:
-			background-color 150ms ease,
-			color 150ms ease;
-	}
-
-	.copy-id-button:hover {
-		background: var(--bg-elevated);
-		color: var(--text-primary);
-	}
-
-	.live-status {
-		display: inline-flex;
-		align-items: center;
-		gap: 7px;
-		height: 28px;
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-		background: var(--bg-elevated);
-		padding: 0 10px;
-		color: var(--text-secondary);
-		font-size: 12px;
-		font-weight: 600;
-	}
-
-	.live-status-dot {
-		width: 7px;
-		height: 7px;
-		border-radius: 999px;
-		background: currentColor;
-	}
-
-	.live-live {
-		border-color: color-mix(in srgb, var(--success) 30%, var(--border));
-		color: var(--success);
-	}
-
-	.live-connecting,
-	.live-reconnecting {
-		border-color: color-mix(in srgb, var(--warning) 32%, var(--border));
-		color: var(--warning);
-	}
-
-	.live-offline {
-		border-color: color-mix(in srgb, var(--danger) 32%, var(--border));
-		color: var(--danger);
-	}
-
 	.version-carousel {
 		overflow-x: auto;
 		border-bottom: 1px solid var(--border);

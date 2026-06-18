@@ -27,8 +27,6 @@ public static class ServiceCollectionExtensions
 
         services
             .AddScoped<IAuthorizationHandler, ConfiguredRolesAuthorizationHandler>();
-        services
-            .AddScoped<IClaimsTransformation, CanAllServiceClaimsTransformation>();
 
         services.AddConfiguredAuthentication(configuration);
         services.AddConfiguredAuthorization();

@@ -32,8 +32,8 @@
 	const showShell = $derived($page.url.pathname !== '/login' && currentUser !== null);
 	const currentPath = $derived($page.url.pathname);
 	const pageTransitionKey = $derived.by(() => {
-		const match = currentPath.match(/^\/services\/([^/]+)\/versions\/[^/]+$/);
-		if (match) return `/services/${match[1]}/versions`;
+		const match = currentPath.match(/^\/services\/([^/]+)(?:\/versions\/[^/]+)?$/);
+		if (match) return `/services/${match[1]}`;
 		return currentPath;
 	});
 	const userCanAll = $derived(canAll(currentUser));

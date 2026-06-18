@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { apiRequest, getApiErrorMessage } from '$lib/api';
@@ -86,31 +85,11 @@
 		return [...nextVersions].sort((a, b) => versionTimestamp(b) - versionTimestamp(a));
 	}
 
-	function latestVersion(): VersionDetail | null {
-		return versions[0] ?? null;
-	}
-
 	function serviceMembers(): string[] {
 		return [...(service?.members ?? [])].sort((a, b) => a.localeCompare(b));
 	}
 
-	async function openLatestVersion() {
-		const version = latestVersion();
-		if (!version) {
-			tab = 'versions';
-			if (window.location.hash !== '#versions') window.history.replaceState(null, '', '#versions');
-			return;
-		}
-
-		await goto(`/services/${currentServiceId()}/versions/${version.id}`);
-	}
-
 	function setTab(nextTab: TabKey) {
-		if (nextTab === 'versions') {
-			void openLatestVersion();
-			return;
-		}
-
 		tab = nextTab;
 		if (window.location.hash !== `#${nextTab}`) window.history.replaceState(null, '', `#${nextTab}`);
 		if (nextTab === 'audit') void loadAudit(auditPage);
@@ -156,10 +135,6 @@
 		error = '';
 		try {
 			await Promise.all([loadService(), loadVersions()]);
-			if (tab === 'versions') {
-				await openLatestVersion();
-				return;
-			}
 			if (tab === 'audit') await loadAudit(auditPage);
 		} catch (e) {
 			error = getApiErrorMessage(e, 'Failed to load service');
@@ -172,10 +147,6 @@
 		setTab(parseHashToTab(window.location.hash));
 		const onHashChange = () => {
 			tab = parseHashToTab(window.location.hash);
-			if (tab === 'versions') {
-				void openLatestVersion();
-				return;
-			}
 			if (tab === 'audit') void loadAudit(auditPage);
 		};
 		window.addEventListener('hashchange', onHashChange);
@@ -268,15 +239,6 @@
 	function toggleRow(index: number) {
 		const key = `${auditPage}-${index}`;
 		expandedRows = { ...expandedRows, [key]: !expandedRows[key] };
-	}
-
-	async function copyServiceId(serviceId: string) {
-		try {
-			await navigator.clipboard.writeText(serviceId);
-			showToast('Service ID copied', 'success');
-		} catch {
-			showToast('Failed to copy service ID', 'error');
-		}
 	}
 
 	function stringifyJson(value: unknown): string {
@@ -396,40 +358,6 @@
 	<ErrorCallout message={error} />
 {:else if service}
 	<section class="space-y-6">
-		<div class="page-header">
-			<div>
-				<p class="section-label">Service</p>
-				<h1 class="page-title">{service.name}</h1>
-				<div class="service-id-pill mt-2">
-					<span class="font-mono" title={service.id}>{service.id}</span>
-					<button
-						class="copy-id-button"
-						type="button"
-						aria-label="Copy service ID"
-						title="Copy service ID"
-						onclick={() => copyServiceId(service?.id ?? currentServiceId())}
-					>
-						<svg viewBox="0 0 16 16" class="h-3.5 w-3.5" fill="none" aria-hidden="true">
-							<rect x="6" y="5" width="7" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4" />
-							<path d="M4 10.5H3.5A1.5 1.5 0 0 1 2 9V3.5A1.5 1.5 0 0 1 3.5 2H9a1.5 1.5 0 0 1 1.5 1.5V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
-						</svg>
-					</button>
-				</div>
-				<p class="page-subtitle">{service.description ?? 'No service description provided.'}</p>
-			</div>
-			<div class="flex flex-wrap gap-2">
-				<span class="metric-pill">{versions.length} versions</span>
-				<span class="metric-pill">{service.members?.length ?? 0} members</span>
-			</div>
-		</div>
-
-		<div class="flex flex-wrap gap-2">
-			<button class={`tab-pill ${tab === 'info' ? 'active' : ''}`} onclick={() => setTab('info')}>Info</button>
-			<button class={`tab-pill ${tab === 'members' ? 'active' : ''}`} onclick={() => setTab('members')}>Members</button>
-			<button class={`tab-pill ${tab === 'versions' ? 'active' : ''}`} onclick={() => setTab('versions')}>Versions</button>
-			<button class={`tab-pill ${tab === 'audit' ? 'active' : ''}`} onclick={() => setTab('audit')}>Audit</button>
-		</div>
-
 		<div class="pt-2">
 			{#if tab === 'info'}
 				<Card>
@@ -667,38 +595,3 @@
 		{/snippet}
 	</Modal>
 {/if}
-
-<style>
-	.service-id-pill {
-		display: inline-flex;
-		max-width: 100%;
-		align-items: center;
-		gap: 6px;
-		border: 1px solid var(--border);
-		border-radius: 7px;
-		background: var(--bg-subtle);
-		padding: 3px 4px 3px 8px;
-		color: var(--text-secondary);
-		font-size: 11px;
-		overflow-wrap: anywhere;
-	}
-
-	.copy-id-button {
-		display: inline-flex;
-		height: 22px;
-		width: 22px;
-		flex: 0 0 auto;
-		align-items: center;
-		justify-content: center;
-		border-radius: 5px;
-		color: var(--text-tertiary);
-		transition:
-			background-color 150ms ease,
-			color 150ms ease;
-	}
-
-	.copy-id-button:hover {
-		background: var(--bg-elevated);
-		color: var(--text-primary);
-	}
-</style>
