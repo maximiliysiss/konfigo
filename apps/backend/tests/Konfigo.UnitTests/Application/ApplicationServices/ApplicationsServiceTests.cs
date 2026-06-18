@@ -129,7 +129,7 @@ public sealed class ApplicationsServiceTests
 
         // Act
         var result = await sut.AddMemberAsync(
-            new AddMemberRequest(existing.Id, userId, new UserId("admin")),
+            new AddMemberRequest(existing.Id, userId, new User(new UserId(Guid.NewGuid().ToString()), "Test User", "admin")),
             CancellationToken.None);
 
         // Assert
@@ -154,7 +154,7 @@ public sealed class ApplicationsServiceTests
 
         // Act
         var result = await sut.AddMemberAsync(
-            new AddMemberRequest(existing.Id, userId, new UserId("admin")),
+            new AddMemberRequest(existing.Id, userId, new User(new UserId(Guid.NewGuid().ToString()), "Test User", "admin")),
             CancellationToken.None);
 
         // Assert
@@ -178,7 +178,7 @@ public sealed class ApplicationsServiceTests
 
         // Act
         var result = await sut.RemoveMemberAsync(
-            new RemoveMemberRequest(existing.Id, userId, new UserId("admin")),
+            new RemoveMemberRequest(existing.Id, userId, new User(new UserId(Guid.NewGuid().ToString()), "Test User", "admin")),
             CancellationToken.None);
 
         // Assert

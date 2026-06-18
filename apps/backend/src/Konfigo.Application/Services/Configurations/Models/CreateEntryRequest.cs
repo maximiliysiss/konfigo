@@ -14,4 +14,4 @@ public sealed record CreateEntryRequest(
     string? Description,
     string? GroupName,
     string? GroupDescription,
-    UserId CreatedBy);
+    User CreatedBy);

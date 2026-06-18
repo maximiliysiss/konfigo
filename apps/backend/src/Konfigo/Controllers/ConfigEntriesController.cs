@@ -14,7 +14,6 @@ using Konfigo.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using UpdateEntryRequest = Konfigo.Application.Services.Configurations.Models.UpdateEntryRequest;
 
 namespace Konfigo.Controllers;
@@ -30,18 +29,14 @@ public sealed class ConfigEntriesController : ControllerBase
 
     private readonly ILogger<ConfigEntriesController> _logger;
 
-    private readonly KonfigoAuthenticationOptions _options;
-
     public ConfigEntriesController(
         IConfigEntryService configEntryService,
         IConfigEntryRepository configEntryRepository,
-        ILogger<ConfigEntriesController> logger,
-        IOptions<KonfigoAuthenticationOptions> options)
+        ILogger<ConfigEntriesController> logger)
     {
         _configEntryService = configEntryService;
         _configEntryRepository = configEntryRepository;
         _logger = logger;
-        _options = options.Value;
     }
 
     [HttpGet]
@@ -53,9 +48,8 @@ public sealed class ConfigEntriesController : ControllerBase
         _logger.LogConfigEntrySearchStarted(service, version);
 
         var searchEntryRequest = SearchEntryRequest.Create(
-            service,
-            version,
-            asTracking: false);
+            serviceId: service,
+            versionId: version);
 
         var result = await _configEntryRepository
             .GetAsync(searchEntryRequest, cancellationToken)
@@ -88,7 +82,7 @@ public sealed class ConfigEntriesController : ControllerBase
             Description: request.Description,
             GroupName: request.GroupName,
             GroupDescription: request.GroupDescription,
-            CreatedBy: User.GetId());
+            CreatedBy: HttpContext.GetUser());
 
         var result = await _configEntryService.CreateAsync(createEntryRequest, cancellationToken);
 
@@ -109,7 +103,7 @@ public sealed class ConfigEntriesController : ControllerBase
             ServiceId: service,
             VersionId: version,
             Requests: request.Select(Map).ToArray(),
-            UpdatedBy: User.GetMemberId(_options));
+            UpdatedBy: HttpContext.GetUser());
 
         try
         {
@@ -153,7 +147,7 @@ public sealed class ConfigEntriesController : ControllerBase
             GroupName: request.GroupName,
             GroupDescription: request.GroupDescription,
             Generation: request.Generation,
-            UpdatedBy: User.GetId());
+            UpdatedBy: HttpContext.GetUser());
 
         var result = await _configEntryService.UpdateAsync(updateEntryRequest, cancellationToken);
 
@@ -175,7 +169,7 @@ public sealed class ConfigEntriesController : ControllerBase
             ServiceId: service,
             VersionId: version,
             Id: new EntryId(entryId),
-            DeletedBy: User.GetId());
+            DeletedBy: HttpContext.GetUser());
 
         await _configEntryService.DeleteAsync(deleteEntryRequest, cancellationToken);
     }

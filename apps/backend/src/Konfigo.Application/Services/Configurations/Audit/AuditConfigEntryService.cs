@@ -59,7 +59,7 @@ internal sealed class AuditConfigEntryService : IConfigEntryService
                     GroupName: request.GroupName,
                     GroupDescription: request.GroupDescription),
                 ServiceId = request.ServiceId,
-                UserId = request.CreatedBy,
+                UserId = request.CreatedBy.Id,
                 Id = LogId.New(),
                 CreatedAt = configEntry.CreatedAt,
             };
@@ -97,7 +97,7 @@ internal sealed class AuditConfigEntryService : IConfigEntryService
                     GroupName: request.GroupName,
                     GroupDescription: request.GroupDescription),
                 ServiceId = request.ServiceId,
-                UserId = request.UpdatedBy,
+                UserId = request.UpdatedBy.Id,
                 Id = LogId.New(),
                 CreatedAt = configEntry.UpdatedAt ?? configEntry.CreatedAt,
             };
@@ -129,7 +129,7 @@ internal sealed class AuditConfigEntryService : IConfigEntryService
             return new AuditLog
             {
                 ServiceId = request.ServiceId,
-                UserId = request.UpdatedBy,
+                UserId = request.UpdatedBy.Id,
                 Id = LogId.New(),
                 CreatedAt = entry.UpdatedAt ?? entry.CreatedAt,
                 Entry = new EntrySetEntry(entry.Id, entry.RawValue),
@@ -168,7 +168,7 @@ internal sealed class AuditConfigEntryService : IConfigEntryService
                     GroupName: configEntry.GroupName,
                     GroupDescription: configEntry.GroupDescription),
                 ServiceId = request.ServiceId,
-                UserId = request.DeletedBy,
+                UserId = request.DeletedBy.Id,
                 Id = LogId.New(),
                 CreatedAt = configEntry.UpdatedAt ?? configEntry.CreatedAt,
             };

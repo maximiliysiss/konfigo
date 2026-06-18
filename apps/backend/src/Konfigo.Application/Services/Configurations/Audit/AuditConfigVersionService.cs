@@ -56,7 +56,7 @@ internal sealed class AuditConfigVersionService : IConfigVersionService
                     VersionLabel: request.VersionLabel,
                     Description: request.Description),
                 ServiceId = request.ServiceId,
-                UserId = request.CreatedBy,
+                UserId = request.CreatedBy.Id,
                 Id = LogId.New(),
                 CreatedAt = configVersion.CreatedAt,
             };
@@ -88,7 +88,7 @@ internal sealed class AuditConfigVersionService : IConfigVersionService
             {
                 Entry = new VersionUpdatedEntry(configVersion.Id, request.VersionLabel, request.Description),
                 ServiceId = request.ServiceId,
-                UserId = request.UpdatedBy,
+                UserId = request.UpdatedBy.Id,
                 Id = LogId.New(),
                 CreatedAt = configVersion.CreatedAt,
             };

@@ -107,8 +107,7 @@ internal sealed class ConfigVersionService : IConfigVersionService
         var searchExistingVersionRequest = SearchVersionRequest.Create(
             serviceId: request.ServiceId,
             label: request.VersionLabel,
-            include: [EEntityType.Entry],
-            asTracking: false);
+            include: [EEntityType.Entry]);
 
         var existingVersion = await _repository
             .GetAsync(searchExistingVersionRequest, cancellationToken)
@@ -127,8 +126,7 @@ internal sealed class ConfigVersionService : IConfigVersionService
         var searchVersionRequest = SearchVersionRequest.Create(
             serviceId: request.ServiceId,
             limit: 1,
-            include: [EEntityType.Entry],
-            asTracking: false);
+            include: [EEntityType.Entry]);
 
         var previousVersion = await _repository
             .GetAsync(searchVersionRequest, cancellationToken)

@@ -12,4 +12,4 @@ public sealed record UpdateEntryRequest(
     string? GroupName,
     string? GroupDescription,
     int Generation,
-    UserId UpdatedBy);
+    User UpdatedBy);

@@ -22,14 +22,13 @@ internal static class WebApplicationFactoryExtensions
     public static HttpClient CreateAuthenticatedClient<TEntryPoint>(
         this WebApplicationFactory<TEntryPoint> factory,
         string roles = "admin",
-        string services = "all",
         Guid? userId = null)
         where TEntryPoint : class
     {
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add(TestAuthHandler.UserIdHeader, (userId ?? Guid.NewGuid()).ToString());
         client.DefaultRequestHeaders.Add(TestAuthHandler.RolesHeader, roles);
-        client.DefaultRequestHeaders.Add(TestAuthHandler.ServicesHeader, services);
+        client.DefaultRequestHeaders.Add(TestAuthHandler.EmailHeader, $"{roles}@{roles}.com");
         return client;
     }
 }

@@ -52,7 +52,7 @@ internal sealed class AuditApplicationsService : IApplicationsService
                     RepositoryUrl: request.RepositoryUrl,
                     ContactEmail: request.ContactEmail),
                 ServiceId = applicationService.Id,
-                UserId = request.CreatedBy,
+                UserId = request.CreatedBy.Id,
                 Id = LogId.New(),
                 CreatedAt = applicationService.CreatedAt,
             };
@@ -79,7 +79,7 @@ internal sealed class AuditApplicationsService : IApplicationsService
             return new AuditLog
             {
                 ServiceId = applicationService.Id,
-                UserId = request.UpdatedBy,
+                UserId = request.UpdatedBy.Id,
                 Id = LogId.New(),
                 CreatedAt = applicationService.UpdatedAt ?? applicationService.CreatedAt,
                 Entry = new ServiceUpdatedEntry(
@@ -117,7 +117,7 @@ internal sealed class AuditApplicationsService : IApplicationsService
                     RepositoryUrl: service.RepositoryUrl,
                     ContactEmail: service.ContactEmail),
                 ServiceId = request.Id,
-                UserId = request.DeletedBy,
+                UserId = request.DeletedBy.Id,
                 CreatedAt = _dateTimeProvider.GetNow(),
             };
         }
@@ -145,7 +145,7 @@ internal sealed class AuditApplicationsService : IApplicationsService
                 Id = LogId.New(),
                 Entry = new ServiceMemberAddedEntry(request.UserId),
                 ServiceId = request.Id,
-                UserId = request.CreatedBy,
+                UserId = request.CreatedBy.Id,
                 CreatedAt = _dateTimeProvider.GetNow(),
             };
         }
@@ -173,7 +173,7 @@ internal sealed class AuditApplicationsService : IApplicationsService
                 Id = LogId.New(),
                 Entry = new ServiceMemberRemovedEntry(request.UserId),
                 ServiceId = request.Id,
-                UserId = request.CreatedBy,
+                UserId = request.CreatedBy.Id,
                 CreatedAt = _dateTimeProvider.GetNow(),
             };
         }

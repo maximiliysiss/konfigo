@@ -39,7 +39,7 @@ public sealed class AuditConfigEntryServiceTests
         await auditRepo.Received(1).AddAsync(
             Arg.Is<AuditLog>(log =>
                 log.ServiceId == request.ServiceId &&
-                log.UserId == request.CreatedBy &&
+                log.UserId == request.CreatedBy.Id &&
                 log.Entry is EntryCreatedEntry &&
                 ((EntryCreatedEntry)log.Entry).Id == created.Id &&
                 ((EntryCreatedEntry)log.Entry).RawValue == request.RawValue),
@@ -67,7 +67,7 @@ public sealed class AuditConfigEntryServiceTests
         result.Should().BeSameAs(updated);
         await auditRepo.Received(1).AddAsync(
             Arg.Is<AuditLog>(log =>
-                log.UserId == request.UpdatedBy &&
+                log.UserId == request.UpdatedBy.Id &&
                 log.Entry is EntryUpdatedEntry &&
                 ((EntryUpdatedEntry)log.Entry).Id == updated.Id),
             Arg.Any<CancellationToken>());
@@ -100,7 +100,7 @@ public sealed class AuditConfigEntryServiceTests
         var inner = Substitute.For<IConfigEntryService>();
         var auditRepo = Substitute.For<IAuditLogRepository>();
 
-        var updatedBy = new UserId(Guid.NewGuid().ToString());
+        var updatedBy = new User(new UserId(Guid.NewGuid().ToString()), "Test User", string.Empty);
         var serviceId = ServiceId.New();
         var versionId = VersionId.New();
         var request = new SetEntryRequest(
@@ -129,8 +129,8 @@ public sealed class AuditConfigEntryServiceTests
         await auditRepo.Received(1).AddAsync(
             Arg.Is<AuditLog[]>(logs =>
                 logs.Length == 2 &&
-                logs.All(l => l.UserId == updatedBy) &&
-                logs.All<AuditLog>(l => l.Entry is EntrySetEntry)),
+                logs.All(l => l.UserId == updatedBy.Id) &&
+                logs.All(l => l.Entry is EntrySetEntry)),
             Arg.Any<CancellationToken>());
     }
 
@@ -154,7 +154,7 @@ public sealed class AuditConfigEntryServiceTests
         result.Should().BeSameAs(deleted);
         await auditRepo.Received(1).AddAsync(
             Arg.Is<AuditLog>(log =>
-                log.UserId == request.DeletedBy &&
+                log.UserId == request.DeletedBy.Id &&
                 log.Entry is EntryDeletedEntry &&
                 ((EntryDeletedEntry)log.Entry).Id == deleted.Id),
             Arg.Any<CancellationToken>());

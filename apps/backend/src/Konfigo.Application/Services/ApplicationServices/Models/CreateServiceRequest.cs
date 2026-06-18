@@ -7,4 +7,4 @@ public sealed record CreateServiceRequest(
     string? Description,
     string? RepositoryUrl,
     string? ContactEmail,
-    UserId CreatedBy);
+    User CreatedBy);

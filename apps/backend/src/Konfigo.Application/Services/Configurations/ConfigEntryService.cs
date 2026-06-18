@@ -123,9 +123,9 @@ internal sealed class ConfigEntryService : IConfigEntryService
             return [];
         }
 
-        if (request.UpdatedBy is not null && !service.Members.Contains(request.UpdatedBy.Value))
+        if (!request.UpdatedBy.IsAdmin() && !service.HasMember(request.UpdatedBy))
         {
-            _logger.LogAccessDenied(request.ServiceId, request.UpdatedBy);
+            _logger.LogAccessDenied(request.ServiceId, request.UpdatedBy.Id);
             throw new UnauthorizedAccessException("User is not a member of the service");
         }
 

@@ -16,7 +16,6 @@ using Konfigo.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using AddMemberRequest = Konfigo.Application.Services.ApplicationServices.Models.AddMemberRequest;
 using UpdateServiceRequest = Konfigo.Application.Services.ApplicationServices.Models.UpdateServiceRequest;
 
@@ -32,18 +31,14 @@ public sealed class ServicesController : ControllerBase
 
     private readonly ILogger<ServicesController> _logger;
 
-    private readonly KonfigoAuthenticationOptions _options;
-
     public ServicesController(
         IApplicationsService applicationsService,
         IApplicationsRepository applicationsRepository,
-        ILogger<ServicesController> logger,
-        IOptions<KonfigoAuthenticationOptions> options)
+        ILogger<ServicesController> logger)
     {
         _applicationsService = applicationsService;
         _applicationsRepository = applicationsRepository;
         _logger = logger;
-        _options = options.Value;
     }
 
     [HttpPost("search")]
@@ -51,12 +46,13 @@ public sealed class ServicesController : ControllerBase
     {
         var pageToken = contract.PageToken.AsPageToken(SearchServiceRequest.PageToken.Empty);
 
+        var member = HttpContext.GetUser();
+
         var searchServiceRequest = SearchServiceRequest.Create(
             name: contract.Name,
             pageSize: contract.PageSize,
-            member: User.GetMemberId(_options),
-            cursor: pageToken,
-            asTracking: false);
+            member: member.IsAdmin() ? null : member,
+            cursor: pageToken);
 
         var services = await _applicationsRepository
             .GetAsync(searchServiceRequest, cancellationToken)
@@ -82,12 +78,8 @@ public sealed class ServicesController : ControllerBase
         var id = new ServiceId(serviceId);
         _logger.LogApplicationServiceGetByIdStarted(id);
 
-        var searchServiceRequest = SearchServiceRequest.Create(
-            ids: [id],
-            asTracking: false);
-
         var service = await _applicationsRepository
-            .GetAsync(searchServiceRequest, cancellationToken)
+            .GetAsync(SearchServiceRequest.Create(ids: [id]), cancellationToken)
             .SingleOrDefaultAsync(cancellationToken);
 
         if (service is null)
@@ -110,7 +102,7 @@ public sealed class ServicesController : ControllerBase
             Description: request.Description,
             RepositoryUrl: request.RepositoryUrl,
             ContactEmail: request.ContactEmail,
-            CreatedBy: User.GetId());
+            CreatedBy: HttpContext.GetUser());
 
         var result = await _applicationsService.AddAsync(
             request: createRequest,
@@ -132,7 +124,7 @@ public sealed class ServicesController : ControllerBase
             Description: request.Description,
             RepositoryUrl: request.RepositoryUrl,
             ContactEmail: request.ContactEmail,
-            UpdatedBy: User.GetId());
+            UpdatedBy: HttpContext.GetUser());
 
         var result = await _applicationsService.UpdateAsync(
             request: updateRequest,
@@ -147,7 +139,7 @@ public sealed class ServicesController : ControllerBase
     {
         var deleteServiceRequest = new DeleteServiceRequest(
             Id: new ServiceId(serviceId),
-            DeletedBy: User.GetId());
+            DeletedBy: HttpContext.GetUser());
 
         await _applicationsService.DeleteAsync(deleteServiceRequest, cancellationToken);
     }
@@ -156,8 +148,13 @@ public sealed class ServicesController : ControllerBase
     [HttpPost("{serviceId:guid}/members")]
     public async Task AddMember([FromRoute] Guid serviceId, [FromQuery] string userId, CancellationToken cancellationToken)
     {
+        var addMemberRequest = new AddMemberRequest(
+            Id: new ServiceId(serviceId),
+            UserId: new UserId(userId),
+            CreatedBy: HttpContext.GetUser());
+
         await _applicationsService.AddMemberAsync(
-            request: new AddMemberRequest(new ServiceId(serviceId), new UserId(userId), User.GetId()),
+            request: addMemberRequest,
             cancellationToken: cancellationToken);
     }
 
@@ -165,8 +162,13 @@ public sealed class ServicesController : ControllerBase
     [HttpDelete("{serviceId:guid}/members")]
     public async Task DeleteMember([FromRoute] Guid serviceId, [FromQuery] string userId, CancellationToken cancellationToken)
     {
+        var removeMemberRequest = new RemoveMemberRequest(
+            Id: new ServiceId(serviceId),
+            UserId: new UserId(userId),
+            CreatedBy: HttpContext.GetUser());
+
         await _applicationsService.RemoveMemberAsync(
-            request: new RemoveMemberRequest(new ServiceId(serviceId), new UserId(userId), User.GetId()),
+            request: removeMemberRequest,
             cancellationToken: cancellationToken);
     }
 }

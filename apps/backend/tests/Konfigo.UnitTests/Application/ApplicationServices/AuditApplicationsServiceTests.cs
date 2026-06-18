@@ -37,7 +37,7 @@ public sealed class AuditApplicationsServiceTests
         await auditRepo.Received(1).AddAsync(
             Arg.Is<AuditLog>(log =>
                 log.ServiceId == created.Id &&
-                log.UserId == request.CreatedBy &&
+                log.UserId == request.CreatedBy.Id &&
                 log.CreatedAt == created.CreatedAt &&
                 log.Entry is ServiceCreatedEntry &&
                 ((ServiceCreatedEntry)log.Entry).Name == request.Name &&
@@ -70,7 +70,7 @@ public sealed class AuditApplicationsServiceTests
         await auditRepo.Received(1).AddAsync(
             Arg.Is<AuditLog>(log =>
                 log.ServiceId == updated.Id &&
-                log.UserId == request.UpdatedBy &&
+                log.UserId == request.UpdatedBy.Id &&
                 log.CreatedAt == updated.UpdatedAt &&
                 log.Entry is ServiceUpdatedEntry &&
                 ((ServiceUpdatedEntry)log.Entry).Name == request.Name &&
@@ -102,7 +102,7 @@ public sealed class AuditApplicationsServiceTests
         await auditRepo.Received(1).AddAsync(
             Arg.Is<AuditLog>(log =>
                 log.ServiceId == request.Id &&
-                log.UserId == request.DeletedBy &&
+                log.UserId == request.DeletedBy.Id &&
                 log.Entry is ServiceDeletedEntry &&
                 ((ServiceDeletedEntry)log.Entry).Name == deleted.Name &&
                 ((ServiceDeletedEntry)log.Entry).Description == deleted.Description &&

@@ -7,23 +7,20 @@ public sealed record SearchVersionRequest(
     VersionId[] Ids,
     string? Label,
     int Limit,
-    EEntityType[] Include,
-    bool AsTracking)
+    EEntityType[] Include)
 {
     public static SearchVersionRequest Create(
         ServiceId serviceId,
         VersionId[]? ids = null,
         string? label = null,
         int limit = int.MaxValue,
-        EEntityType[]? include = null,
-        bool asTracking = true)
+        EEntityType[]? include = null)
     {
         return new SearchVersionRequest(
             ServiceId: serviceId,
             Ids: ids ?? [],
             Label: label,
             Limit: limit,
-            Include: include ?? [],
-            AsTracking: asTracking);
+            Include: include ?? []);
     }
 }

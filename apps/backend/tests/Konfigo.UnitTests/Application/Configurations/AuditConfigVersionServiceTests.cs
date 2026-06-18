@@ -38,7 +38,7 @@ public sealed class AuditConfigVersionServiceTests
         await auditRepo.Received(1).AddAsync(
             Arg.Is<AuditLog>(log =>
                 log.ServiceId == request.ServiceId &&
-                log.UserId == request.CreatedBy &&
+                log.UserId == request.CreatedBy.Id &&
                 log.Entry is VersionCreatedEntry &&
                 ((VersionCreatedEntry)log.Entry).Id == created.Id &&
                 ((VersionCreatedEntry)log.Entry).VersionLabel == request.VersionLabel),
@@ -65,7 +65,7 @@ public sealed class AuditConfigVersionServiceTests
         result.Should().BeSameAs(updated);
         await auditRepo.Received(1).AddAsync(
             Arg.Is<AuditLog>(log =>
-                log.UserId == request.UpdatedBy &&
+                log.UserId == request.UpdatedBy.Id &&
                 log.Entry is VersionUpdatedEntry &&
                 ((VersionUpdatedEntry)log.Entry).Id == updated.Id),
             Arg.Any<CancellationToken>());

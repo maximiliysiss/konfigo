@@ -5,20 +5,17 @@ namespace Konfigo.Application.Repositories.Models;
 public sealed record SearchAuditLogRequest(
     ServiceId ServiceId,
     int PageSize,
-    SearchAuditLogRequest.PageToken Cursor,
-    bool AsTracking)
+    SearchAuditLogRequest.PageToken Cursor)
 {
     public static SearchAuditLogRequest Create(
         ServiceId serviceId,
         int? pageSize = null,
-        PageToken? cursor = null,
-        bool asTracking = true)
+        PageToken? cursor = null)
     {
         return new SearchAuditLogRequest(
             ServiceId: serviceId,
             PageSize: pageSize ?? int.MaxValue,
-            Cursor: cursor ?? PageToken.Empty,
-            AsTracking: asTracking);
+            Cursor: cursor ?? PageToken.Empty);
     }
 
     public record struct PageToken(int Num)

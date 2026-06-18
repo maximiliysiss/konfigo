@@ -15,12 +15,9 @@ internal sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSche
     public const string SchemeName = "TestScheme";
     public const string UserIdHeader = "X-Test-UserId";
     public const string RolesHeader = "X-Test-Roles";
-    public const string ServicesHeader = "X-Test-Services";
+    public const string EmailHeader = "X-Test-Email";
 
-    public TestAuthHandler(
-        IOptionsMonitor<AuthenticationSchemeOptions> options,
-        ILoggerFactory logger,
-        UrlEncoder encoder)
+    public TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder)
         : base(options, logger, encoder)
     {
     }
@@ -38,26 +35,26 @@ internal sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSche
             return Task.FromResult(AuthenticateResult.NoResult());
         }
 
+        var email = Request.Headers.TryGetValue(EmailHeader, out var servicesValues)
+            ? servicesValues.ToString()
+            : string.Empty;
+
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, userId),
             new(ClaimTypes.Name, "test-user"),
-            new(ClaimTypes.Email, "test-user@pnlfin.tech"),
+            new(ClaimTypes.Email, email),
         };
 
         if (Request.Headers.TryGetValue(RolesHeader, out var rolesValues))
         {
-            claims.AddRange(rolesValues
+            var collection = rolesValues
                 .ToString()
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Select(role => new Claim(ClaimTypes.Role, role)));
+                .Select(role => new Claim(ClaimTypes.Role, role));
+
+            claims.AddRange(collection);
         }
-
-        var services = Request.Headers.TryGetValue(ServicesHeader, out var servicesValues)
-            ? servicesValues.ToString().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            : ["all"];
-
-        claims.AddRange(services.Select(service => new Claim("srv", service)));
 
         var identity = new ClaimsIdentity(claims, SchemeName);
         var principal = new ClaimsPrincipal(identity);

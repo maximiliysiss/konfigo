@@ -36,8 +36,7 @@ public sealed class AuditLogsController(IAuditLogRepository auditLogRepository, 
         var searchAuditLogRequest = SearchAuditLogRequest.Create(
             serviceId: id,
             pageSize: contract.PageSize,
-            cursor: pageToken,
-            asTracking: false);
+            cursor: pageToken);
 
         var auditLogs = await auditLogRepository
             .GetAsync(searchAuditLogRequest, cancellationToken)

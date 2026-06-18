@@ -7,21 +7,18 @@ public sealed record SearchEntryRequest(
     ServiceId ServiceId,
     VersionId VersionId,
     EntryId[] Ids,
-    DateTimeOffset? From,
-    bool AsTracking)
+    DateTimeOffset? From)
 {
     public static SearchEntryRequest Create(
         ServiceId serviceId,
         VersionId versionId,
         EntryId[]? ids = null,
-        DateTimeOffset? from = null,
-        bool asTracking = true)
+        DateTimeOffset? from = null)
     {
         return new SearchEntryRequest(
             ServiceId: serviceId,
             VersionId: versionId,
             From: from,
-            Ids: ids ?? [],
-            AsTracking: asTracking);
+            Ids: ids ?? []);
     }
 }

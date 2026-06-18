@@ -6,4 +6,4 @@ public sealed record DeleteEntryRequest(
     ServiceId ServiceId,
     VersionId VersionId,
     EntryId Id,
-    UserId DeletedBy);
+    User DeletedBy);

@@ -80,7 +80,7 @@ internal static class TestFakes
     public static CreateEntryRequest BuildCreateEntryRequest(
         ServiceId? serviceId = null,
         VersionId? versionId = null,
-        UserId? createdBy = null,
+        User? createdBy = null,
         string? key = null,
         string? name = null,
         string? rawValue = null,
@@ -97,7 +97,7 @@ internal static class TestFakes
             RawValue = rawValue ?? request.RawValue,
             ValueType = valueType,
             EnumDefinition = null,
-            CreatedBy = createdBy ?? BuildUserId(),
+            CreatedBy = createdBy ?? BuildUser(),
         };
     }
 
@@ -107,7 +107,7 @@ internal static class TestFakes
         EntryId? id = null,
         string? rawValue = null,
         int generation = 1,
-        UserId? updatedBy = null)
+        User? updatedBy = null)
     {
         var request = AutoFaker.Generate<AppUpdateEntryRequest>();
 
@@ -119,7 +119,7 @@ internal static class TestFakes
             RawValue = rawValue ?? request.RawValue,
             EnumDefinition = null,
             Generation = generation,
-            UpdatedBy = updatedBy ?? BuildUserId(),
+            UpdatedBy = updatedBy ?? BuildUser(),
         };
     }
 
@@ -127,7 +127,7 @@ internal static class TestFakes
         ServiceId? serviceId = null,
         VersionId? versionId = null,
         EntryId? id = null,
-        UserId? deletedBy = null)
+        User? deletedBy = null)
     {
         var request = AutoFaker.Generate<DeleteEntryRequest>();
 
@@ -136,7 +136,7 @@ internal static class TestFakes
             ServiceId = serviceId ?? ServiceId.New(),
             VersionId = versionId ?? VersionId.New(),
             Id = id ?? EntryId.New(),
-            DeletedBy = deletedBy ?? BuildUserId(),
+            DeletedBy = deletedBy ?? BuildUser(),
         };
     }
 
@@ -144,7 +144,7 @@ internal static class TestFakes
         ServiceId? serviceId = null,
         string? versionLabel = null,
         string? description = null,
-        UserId? createdBy = null)
+        User? createdBy = null)
     {
         var request = AutoFaker.Generate<CreateVersionRequest>();
 
@@ -153,7 +153,7 @@ internal static class TestFakes
             ServiceId = serviceId ?? ServiceId.New(),
             VersionLabel = versionLabel ?? request.VersionLabel,
             Description = description ?? request.Description,
-            CreatedBy = createdBy ?? BuildUserId(),
+            CreatedBy = createdBy ?? BuildUser(),
         };
     }
 
@@ -162,7 +162,7 @@ internal static class TestFakes
         VersionId? versionId = null,
         string? versionLabel = null,
         string? description = null,
-        UserId? updatedBy = null)
+        User? updatedBy = null)
     {
         var request = AutoFaker.Generate<AppUpdateVersionRequest>();
 
@@ -172,7 +172,7 @@ internal static class TestFakes
             VersionId = versionId ?? VersionId.New(),
             VersionLabel = versionLabel ?? request.VersionLabel,
             Description = description ?? request.Description,
-            UpdatedBy = updatedBy ?? BuildUserId(),
+            UpdatedBy = updatedBy ?? BuildUser(),
         };
     }
 
@@ -211,21 +211,21 @@ internal static class TestFakes
 
     public static CreateServiceRequest BuildCreateServiceRequest(
         string? name = null,
-        UserId? createdBy = null)
+        User? createdBy = null)
     {
         var request = AutoFaker.Generate<CreateServiceRequest>();
 
         return request with
         {
             Name = name ?? request.Name,
-            CreatedBy = createdBy ?? BuildUserId(),
+            CreatedBy = createdBy ?? BuildUser(),
         };
     }
 
     public static AppUpdateServiceRequest BuildUpdateServiceRequest(
         ServiceId? id = null,
         string? name = null,
-        UserId? updatedBy = null)
+        User? updatedBy = null)
     {
         var request = AutoFaker.Generate<AppUpdateServiceRequest>();
 
@@ -233,22 +233,22 @@ internal static class TestFakes
         {
             Id = id ?? ServiceId.New(),
             Name = name ?? request.Name,
-            UpdatedBy = updatedBy ?? BuildUserId(),
+            UpdatedBy = updatedBy ?? BuildUser(),
         };
     }
 
     public static DeleteServiceRequest BuildDeleteServiceRequest(
         ServiceId? id = null,
-        UserId? deletedBy = null)
+        User? deletedBy = null)
     {
         var request = AutoFaker.Generate<DeleteServiceRequest>();
 
         return request with
         {
             Id = id ?? ServiceId.New(),
-            DeletedBy = deletedBy ?? BuildUserId(),
+            DeletedBy = deletedBy ?? BuildUser(),
         };
     }
 
-    private static UserId BuildUserId() => new(Guid.NewGuid().ToString());
+    private static User BuildUser() => new(new UserId(Guid.NewGuid().ToString()), string.Empty, string.Empty);
 }

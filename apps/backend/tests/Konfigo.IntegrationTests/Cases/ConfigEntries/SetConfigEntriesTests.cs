@@ -114,7 +114,7 @@ public sealed class SetConfigEntriesTests : IAsyncLifetime
             });
         _entryDbHelper.Track(entry.Id);
 
-        using var client = _fixture.CreateAuthenticatedClient(roles: "admin", services: string.Empty);
+        using var client = _fixture.CreateAuthenticatedClient(roles: "admin");
         var setRequest = new[]
         {
             new SetConfigEntryRequest { Id = entry.Id, RawValue = "changed", Generation = entry.Generation },
@@ -159,7 +159,7 @@ public sealed class SetConfigEntriesTests : IAsyncLifetime
             });
         _entryDbHelper.Track(entry.Id);
 
-        using var client = _fixture.CreateAuthenticatedClient(roles: "developer", services: "other-service");
+        using var client = _fixture.CreateAuthenticatedClient(roles: "developer");
         var setRequest = new[]
         {
             new SetConfigEntryRequest { Id = entry.Id, RawValue = "changed", Generation = entry.Generation },

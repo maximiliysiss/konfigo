@@ -16,6 +16,8 @@ public sealed class ApplicationService : EntityBase<ServiceId>
 
     public ICollection<ConfigVersion> ConfigVersions { get; set; } = [];
 
+    public bool HasMember(User user) => user.IsAdmin() || Members.Contains(user.Id) || Members.Contains(new UserId(user.Email));
+
     public void Update(UpdateServiceRequest request, DateTimeOffset now)
     {
         Name = request.Name;

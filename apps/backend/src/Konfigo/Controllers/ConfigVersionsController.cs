@@ -43,12 +43,8 @@ public sealed class ConfigVersionsController : ControllerBase
         var service = new ServiceId(serviceId);
         _logger.LogConfigVersionSearchStarted(service);
 
-        var searchVersionRequest = SearchVersionRequest.Create(
-            serviceId: service,
-            asTracking: false);
-
         var configVersions = await _configVersionsRepository
-            .GetAsync(searchVersionRequest, cancellationToken)
+            .GetAsync(SearchVersionRequest.Create(serviceId: service), cancellationToken)
             .ToArrayAsync(cancellationToken);
 
         _logger.LogConfigVersionSearchCompleted(service, configVersions.Length);
@@ -70,8 +66,7 @@ public sealed class ConfigVersionsController : ControllerBase
 
         var searchVersionRequest = SearchVersionRequest.Create(
             serviceId: service,
-            ids: [version],
-            asTracking: false);
+            ids: [version]);
 
         var configVersion = await _configVersionsRepository
             .GetAsync(searchVersionRequest, cancellationToken)
@@ -98,7 +93,7 @@ public sealed class ConfigVersionsController : ControllerBase
             ServiceId: service,
             VersionLabel: request.VersionLabel,
             Description: request.Description,
-            CreatedBy: User.GetId());
+            CreatedBy: HttpContext.GetUser());
 
         var result = await _configVersionService.CreateAsync(createVersionRequest, cancellationToken);
 
@@ -121,7 +116,7 @@ public sealed class ConfigVersionsController : ControllerBase
             VersionId: version,
             VersionLabel: request.VersionLabel,
             Description: request.Description,
-            UpdatedBy: User.GetId());
+            UpdatedBy: HttpContext.GetUser());
 
         var result = await _configVersionService.UpdateAsync(updateVersionRequest, cancellationToken);
 

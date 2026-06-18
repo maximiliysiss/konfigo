@@ -8,4 +8,4 @@ public sealed record UpdateServiceRequest(
     string? Description,
     string? RepositoryUrl,
     string? ContactEmail,
-    UserId UpdatedBy);
+    User UpdatedBy);

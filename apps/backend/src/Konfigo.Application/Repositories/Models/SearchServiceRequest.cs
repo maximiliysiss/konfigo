@@ -5,26 +5,23 @@ namespace Konfigo.Application.Repositories.Models;
 public sealed record SearchServiceRequest(
     ServiceId[] Ids,
     string? Name,
-    UserId? Member,
+    User? Member,
     int PageSize,
-    SearchServiceRequest.PageToken Cursor,
-    bool AsTracking)
+    SearchServiceRequest.PageToken Cursor)
 {
     public static SearchServiceRequest Create(
         ServiceId[]? ids = null,
         string? name = null,
-        UserId? member = null,
+        User? member = null,
         int? pageSize = null,
-        PageToken? cursor = null,
-        bool asTracking = true)
+        PageToken? cursor = null)
     {
         return new SearchServiceRequest(
             Ids: ids ?? [],
             Name: name,
             Member: member,
             PageSize: pageSize ?? int.MaxValue,
-            Cursor: cursor ?? PageToken.Empty,
-            AsTracking: asTracking);
+            Cursor: cursor ?? PageToken.Empty);
     }
 
     public record struct PageToken(int Num)

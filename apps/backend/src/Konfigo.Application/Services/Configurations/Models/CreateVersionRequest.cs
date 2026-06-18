@@ -6,4 +6,4 @@ public sealed record CreateVersionRequest(
     ServiceId ServiceId,
     string VersionLabel,
     string? Description,
-    UserId CreatedBy);
+    User CreatedBy);

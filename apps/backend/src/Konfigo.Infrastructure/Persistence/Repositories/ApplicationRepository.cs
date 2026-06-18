@@ -26,7 +26,7 @@ SELECT id, created_at, updated_at, name, description, repository_url, contact_em
 FROM public.application_services
 WHERE (cardinality(:ids) = 0 OR id = ANY(:ids))
   AND (:name IS NULL OR name LIKE '%' || :name || '%')
-  AND (:member IS NULL OR :member = ANY(members))
+  AND (:member_id IS NULL OR array[:member_id, :member_email] && members)
   AND num < :cursorNum
 ORDER BY num DESC
 LIMIT :pageSize;
@@ -42,7 +42,8 @@ LIMIT :pageSize;
             {
                 { "ids", ids },
                 { "name", string.IsNullOrWhiteSpace(request.Name) ? null : request.Name },
-                { "member", request.Member?.Value },
+                { "member_id", request.Member?.Id.Value },
+                { "member_email", request.Member?.Email },
                 { "cursorNum", request.Cursor.Num },
                 { "pageSize", request.PageSize },
             }

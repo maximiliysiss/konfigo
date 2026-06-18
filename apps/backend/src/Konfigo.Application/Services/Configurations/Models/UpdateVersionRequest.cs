@@ -7,4 +7,4 @@ public sealed record UpdateVersionRequest(
     VersionId VersionId,
     string VersionLabel,
     string? Description,
-    UserId UpdatedBy);
+    User UpdatedBy);

@@ -1,24 +1,29 @@
 using System;
-using System.Security.Claims;
 using Konfigo.Authorization;
 using Konfigo.Domain.ValueType;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Konfigo.Extensions;
 
 internal static class UserExtensions
 {
-    public static UserId GetId(this ClaimsPrincipal user)
+    public static User GetUser(this HttpContext context)
     {
-        var value = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        return value is null ? throw new InvalidOperationException("User id not found") : new UserId(value);
-    }
-
-    public static UserId? GetMemberId(this ClaimsPrincipal user, KonfigoAuthenticationOptions options)
-    {
+        var user = context.User;
         if (user.Identity?.IsAuthenticated != true)
             throw new InvalidOperationException("User is not authenticated");
 
-        var roleClaim = user.FindFirst(options.RoleClaimType);
-        return roleClaim?.Value == "admin" ? null : user.GetId();
+        var options = context.RequestServices.GetRequiredService<IOptions<KonfigoAuthenticationOptions>>();
+
+        var id = user.FindFirst(options.Value.IdClaimType);
+        var email = user.FindFirst(options.Value.EmailClaimType);
+        var role = user.FindFirst(options.Value.RoleClaimType);
+
+        if (string.IsNullOrEmpty(id?.Value) || string.IsNullOrEmpty(email?.Value) || string.IsNullOrEmpty(role?.Value))
+            throw new InvalidOperationException("User is missing required claims");
+
+        return new User(Id: new UserId(id.Value), Email: email.Value, Role: role.Value);
     }
 }

@@ -58,7 +58,7 @@ public sealed class SearchServicesTests : IAsyncLifetime
 
         _serviceDbHelper.Track(created.Id);
 
-        using var client = _fixture.CreateAuthenticatedClient(roles: "developer", services: string.Empty, userId: userId);
+        using var client = _fixture.CreateAuthenticatedClient(roles: "developer", userId: userId);
         var request = new SearchServicesRequest { Name = marker, PageSize = 10 };
 
         // Act
