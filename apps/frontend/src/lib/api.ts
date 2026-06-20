@@ -1,5 +1,7 @@
+import { get } from 'svelte/store';
 import { PUBLIC_API_URL } from '$env/static/public';
 import { showAuthUnavailable } from '$lib/stores/availability';
+import { jwtToken } from '$lib/stores/auth';
 
 const defaultApiBaseUrl = '/api';
 
@@ -7,6 +9,22 @@ export type PageResponse<T> = {
 	entities: T[];
 	nextPageToken: string | null;
 };
+
+export type AuthConfig = {
+	provider: 'openid' | 'saml' | 'jwt';
+	jwt?: {
+		authorizeUrl: string;
+		tokenUrl: string;
+		clientId: string;
+		scopes: string;
+	};
+};
+
+export async function fetchAuthConfig(): Promise<AuthConfig> {
+	const response = await fetch(buildBackendUrl('/auth/config'));
+	if (!response.ok) throw new Error('Failed to fetch auth config');
+	return response.json() as Promise<AuthConfig>;
+}
 
 export type AuthUserContract = {
 	id?: string;
@@ -160,6 +178,11 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
 
 	if (!headers.has('Content-Type') && init.body) {
 		headers.set('Content-Type', 'application/json');
+	}
+
+	const token = jwtToken.get();
+	if (token && !headers.has('Authorization')) {
+		headers.set('Authorization', `Bearer ${token}`);
 	}
 
 	const response = await fetch(buildUrl(path), {

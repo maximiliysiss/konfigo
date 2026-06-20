@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { apiRequest, getApiErrorMessage } from '$lib/api';
 	import type {
@@ -217,7 +218,7 @@
 		actionError = '';
 		creatingVersion = true;
 		try {
-			await apiRequest<unknown>(`/configversions/${service.id}`, {
+			const created = await apiRequest<ConfigVersionContract>(`/configversions/${service.id}`, {
 				method: 'POST',
 				body: JSON.stringify({
 					versionLabel: newVersionLabel.trim(),
@@ -228,7 +229,7 @@
 			newVersionLabel = '';
 			newVersionDescription = '';
 			basedOnVersionId = '';
-			await loadVersions();
+			await goto(`/services/${service.id}/versions/${created.id}`);
 		} catch (e) {
 			actionError = getApiErrorMessage(e, 'Failed to create version');
 		} finally {

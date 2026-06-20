@@ -1,0 +1,32 @@
+{
+  "interactiveLogin": true,
+  "tokenCallbacks": [
+    {
+      "issuerId": "default",
+      "requestMappings": [
+        {
+          "requestParam": "username",
+          "match": "admin@konfigo.local",
+          "claims": {
+            "sub": "local-admin",
+            "email": "admin@konfigo.local",
+            "preferred_username": "admin",
+            "name": "admin",
+            "groups": ["admin", "developer"]
+          }
+        },
+        {
+          "requestParam": "username",
+          "match": "developer@konfigo.local",
+          "claims": {
+            "sub": "local-developer",
+            "email": "developer@konfigo.local",
+            "preferred_username": "developer",
+            "name": "developer",
+            "groups": ["developer"]
+          }
+        }
+      ]
+    }
+  ]
+}

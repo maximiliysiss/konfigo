@@ -34,6 +34,31 @@ public sealed class AuthController : ControllerBase
     }
 
     [AllowAnonymous]
+    [HttpGet("auth/config")]
+    public IActionResult GetConfig()
+    {
+        var opts = _authenticationOptions.CurrentValue;
+        var provider = opts.Provider;
+
+        if (provider == AuthenticationProvider.Jwt)
+        {
+            return Ok(new
+            {
+                provider = "jwt",
+                jwt = new
+                {
+                    authorizeUrl = opts.Jwt.AuthorizeUrl,
+                    tokenUrl = opts.Jwt.TokenUrl,
+                    clientId = opts.Jwt.ClientId,
+                    scopes = opts.Jwt.Scopes
+                }
+            });
+        }
+
+        return Ok(new { provider = provider.ToString().ToLowerInvariant() });
+    }
+
+    [AllowAnonymous]
     [HttpGet("auth/login")]
     public Task Login([FromQuery] string? returnUrl)
     {

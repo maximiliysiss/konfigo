@@ -117,6 +117,11 @@
 		if (!mounted || loading || error || activeTab !== 'versions' || $page.url.pathname.includes('/versions/')) return;
 		if (versions.length > 0) void openVersions();
 	});
+
+	$effect(() => {
+		if (!mounted || loading || error || versions.length > 0) return;
+		if ($page.url.pathname.includes('/versions/')) void loadShell();
+	});
 </script>
 
 <section class="space-y-6">

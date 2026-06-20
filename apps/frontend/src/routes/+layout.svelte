@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 	import '../app.css';
 	import { buildBackendUrl } from '$lib/api';
 	import { authAvailabilityIssue, clearAuthUnavailable } from '$lib/stores/availability';
-	import { canAll, user, type AuthUser } from '$lib/stores/auth';
+	import { canAll, user, jwtToken, type AuthUser } from '$lib/stores/auth';
+	import type { AuthConfig } from '$lib/api';
 	import { consumeQueuedToast, toasts } from '$lib/stores/toast';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Toast from '$lib/components/ui/Toast.svelte';
@@ -16,7 +18,7 @@
 	};
 
 	let { data, children } = $props<{
-		data: { user: AuthUser | null; connectionError: ConnectionError | null };
+		data: { user: AuthUser | null; authConfig: AuthConfig; connectionError: ConnectionError | null };
 		children: import('svelte').Snippet;
 	}>();
 
@@ -38,7 +40,14 @@
 	});
 	const userCanAll = $derived(canAll(currentUser));
 	const currentUserLabel = $derived(currentUser?.email ?? currentUser?.name ?? currentUser?.id ?? '');
-	const signOutHref = $derived(buildBackendUrl('/auth/logout?returnUrl=/login'));
+	const signOutHref = $derived(
+		data.authConfig.provider === 'jwt' ? null : buildBackendUrl('/auth/logout?returnUrl=/login')
+	);
+
+	function handleJwtSignOut() {
+		jwtToken.set(null);
+		goto('/login');
+	}
 
 	const navItems = $derived.by(() => {
 		const items: { href: string; label: string; icon: 'grid' | 'plus' }[] = [
@@ -149,12 +158,21 @@
 					</div>
 					<span class="user-identity-label">{currentUserLabel}</span>
 				</div>
-				<a class="topbar-signout" href={signOutHref}>
-					<svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" aria-hidden="true">
-						<path d={icon('log-out')} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-					</svg>
-					<span>Sign out</span>
-				</a>
+				{#if data.authConfig.provider === 'jwt'}
+					<button class="topbar-signout" type="button" onclick={handleJwtSignOut}>
+						<svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" aria-hidden="true">
+							<path d={icon('log-out')} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+						<span>Sign out</span>
+					</button>
+				{:else}
+					<a class="topbar-signout" href={signOutHref}>
+						<svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" aria-hidden="true">
+							<path d={icon('log-out')} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+						<span>Sign out</span>
+					</a>
+				{/if}
 			</div>
 		</header>
 
