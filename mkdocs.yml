@@ -38,6 +38,7 @@ nav:
   - Home: index.md
   - Architecture: architecture.md
   - Deployment: deployment.md
+  - Authentication: authentication.md
   - REST API: api.md
   - gRPC Protocol: grpc.md
   - SDKs:

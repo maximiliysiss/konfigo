@@ -173,82 +173,9 @@ All settings follow ASP.NET Core's double-underscore (`__`) convention for neste
 
 ## Authentication setup
 
-### SAML 2.0 (default)
-
-```json
-{
-  "Authentication": {
-    "Provider": "Saml",
-    "Saml": {
-      "ServiceProviderEntityId": "konfigo",
-      "IdentityProviderEntityId": "https://your-idp.example.com",
-      "MetadataLocation": "https://your-idp.example.com/saml/metadata",
-      "LoadMetadata": true
-    }
-  }
-}
-```
-
-### OpenID Connect
-
-```json
-{
-  "Authentication": {
-    "Provider": "OpenId",
-    "RoleClaimType": "role",
-    "OpenId": {
-      "Authority": "https://your-idp.example.com",
-      "ClientId": "konfigo",
-      "ClientSecret": "secret",
-      "RequireHttpsMetadata": true,
-      "ResponseType": "code",
-      "Scopes": ["openid", "profile", "email"]
-    }
-  }
-}
-```
-
-### JWT Bearer
-
-Suitable for service-to-service access or environments with an external auth proxy:
-
-```json
-{
-  "Authentication": {
-    "Provider": "Jwt",
-    "Jwt": {
-      "Authority": "https://your-idp.example.com",
-      "Audience": "konfigo",
-      "RequireHttpsMetadata": true
-    }
-  }
-}
-```
-
-## Authorization configuration
-
-Role names come from the `role` claim in the identity token. Map them to Konfigo policies:
-
-```json
-{
-  "Authorization": {
-    "Policies": {
-      "canAll": ["admin", "konfigo-admin"],
-      "canChange": ["developer", "konfigo-dev"]
-    }
-  }
-}
-```
-
-`canChange` automatically inherits all roles from `canAll`.
-
-For local Docker Compose, `apps/backend/docker-compose.yml` runs Dex as an OIDC provider and maps
-Dex `groups` to backend roles with `Authentication__RoleClaimType=groups`.
-
-| User | Password | Dex groups | Konfigo permissions |
-|------|----------|------------|---------------------|
-| `admin@konfigo.local` | `admin` | `admin`, `developer` | `canAll`, `canChange` |
-| `developer@konfigo.local` | `developer` | `developer` | `canChange` |
+Konfigo supports three authentication providers: OpenID Connect, JWT Bearer, and SAML 2.0.
+See the **[Authentication](authentication.md)** page for the full configuration reference,
+local development setup for each provider, and environment variable examples.
 
 ## Database migrations
 
