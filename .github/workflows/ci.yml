@@ -231,11 +231,16 @@ jobs:
       - name: Pack
         run: dotnet pack --configuration Release --output ${{ env.NuGetDirectory }}
         working-directory: packages/dotnet
+      - name: NuGet login (OIDC → temp API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: contoso-bot
       - name: Push to NuGet.org
         shell: pwsh
         run: |
           foreach ($file in (Get-ChildItem "${{ env.NuGetDirectory }}" -Recurse -Include *.nupkg)) {
-            dotnet nuget push $file --api-key "${{ secrets.NUGET_API }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+            dotnet nuget push $file --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
           }
 
   # ── Docker images ──────────────────────────────────────────────────────────
