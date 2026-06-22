@@ -1,6 +1,6 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 
-ARG KONFIGO_VERSION=0.0.2
+ARG KONFIGO_VERSION=0.0.3
 
 WORKDIR /src
 
@@ -10,7 +10,7 @@ RUN dotnet publish src/Konfigo/Konfigo.csproj -c Release -o /app/publish /p:Vers
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 
-ARG KONFIGO_VERSION=0.0.2
+ARG KONFIGO_VERSION=0.0.3
 LABEL org.opencontainers.image.version=$KONFIGO_VERSION
 ENV KONFIGO_VERSION=$KONFIGO_VERSION
 

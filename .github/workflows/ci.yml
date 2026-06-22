@@ -239,7 +239,7 @@ jobs:
         uses: NuGet/login@v1
         id: login
         with:
-          user: contoso-bot
+          user: maximiliysiss
       - name: Push to NuGet.org
         shell: pwsh
         run: |
