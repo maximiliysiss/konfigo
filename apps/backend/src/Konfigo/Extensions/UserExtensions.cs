@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Konfigo.Authorization;
 using Konfigo.Domain.ValueType;
 using Microsoft.AspNetCore.Http;
@@ -19,11 +20,11 @@ internal static class UserExtensions
 
         var id = user.FindFirst(options.Value.IdClaimType);
         var email = user.FindFirst(options.Value.EmailClaimType);
-        var role = user.FindFirst(options.Value.RoleClaimType);
+        var roles = user.FindAll(options.Value.RoleClaimType).Select(c => c.Value).ToArray();
 
-        if (string.IsNullOrEmpty(id?.Value) || string.IsNullOrEmpty(email?.Value) || string.IsNullOrEmpty(role?.Value))
+        if (string.IsNullOrEmpty(id?.Value) || string.IsNullOrEmpty(email?.Value) || roles is [])
             throw new InvalidOperationException("User is missing required claims");
 
-        return new User(Id: new UserId(id.Value), Email: email.Value, Role: role.Value);
+        return new User(Id: new UserId(id.Value), Email: email.Value, Roles: roles);
     }
 }

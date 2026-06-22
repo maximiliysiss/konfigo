@@ -12,6 +12,7 @@ services:
         depends_on:
             - dex
             - mock-oauth2
+            - saml-idp
 
     postgres:
         image: postgres:14
@@ -53,3 +54,16 @@ services:
             - ./docker/mock-oauth2/config.json:/app/config.json:ro
         environment:
             JSON_CONFIG_PATH: /app/config.json
+
+    saml-idp:
+        image: druidfi/saml-idp:2.4.4
+        ports:
+            - "4000:8080"
+            - "4001:8443"
+        environment:
+            SIMPLESAMLPHP_IDP_BASEURLPATH: http://localhost:3000/saml2/simplesaml/
+            SIMPLESAMLPHP_SP_ENTITY_ID: http://localhost:3000/saml2/Metadata
+            SIMPLESAMLPHP_SP_ASSERTION_CONSUMER_SERVICE: http://localhost:3000/saml2/Acs
+            SIMPLESAMLPHP_SP_SINGLE_LOGOUT_SERVICE: http://localhost:3000/saml2/Logout
+        volumes:
+            - ./docker/saml-config/authsources.php:/app/simplesamlphp/config/authsources.php

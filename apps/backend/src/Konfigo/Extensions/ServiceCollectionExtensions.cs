@@ -10,7 +10,9 @@ using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Sustainsys.Saml2;
 using Sustainsys.Saml2.AspNetCore2;
+using Sustainsys.Saml2.Metadata;
 
 namespace Konfigo.Extensions;
 
@@ -101,7 +103,21 @@ public static class ServiceCollectionExtensions
                     authenticationOptions.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
                 })
                 .AddCookie()
-                .AddSaml2(samlOptions => configuration.GetSection($"{KonfigoAuthenticationOptions.SectionName}:Saml").Bind(samlOptions));
+                .AddSaml2(samlOptions =>
+                {
+                    samlOptions.SPOptions.ModulePath = options.Saml.SpOptionsModulePath;
+                    samlOptions.SPOptions.EntityId = new EntityId(options.Saml.SpOptionsEntityId);
+
+                    var identityProvider = new IdentityProvider(
+                        new EntityId(options.Saml.IdentityProviderEntityId),
+                        samlOptions.SPOptions)
+                    {
+                        LoadMetadata = true,
+                        MetadataLocation = options.Saml.IdentityProviderMetadataUrl,
+                    };
+
+                    samlOptions.IdentityProviders.Add(identityProvider);
+                });
 
             return services;
         }
@@ -126,5 +142,4 @@ public static class ServiceCollectionExtensions
                         .AddRequirements(new ConfiguredRolesRequirement(AuthorizationPolicyNames.CanChange)));
         });
     }
-
 }

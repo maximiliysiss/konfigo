@@ -12,6 +12,7 @@ public sealed class KonfigoAuthenticationOptions
     public string EmailClaimType { get; init; } = ClaimTypes.Email;
 
     public KonfigoJwtOptions Jwt { get; init; } = new();
+    public KonfigoSamlOptions Saml { get; init; } = new();
 }
 
 public sealed class KonfigoJwtOptions
@@ -20,6 +21,14 @@ public sealed class KonfigoJwtOptions
     public string? AuthorizeUrl { get; init; }
     public string? TokenUrl { get; init; }
     public string Scopes { get; init; } = "openid profile email";
+}
+
+public sealed class KonfigoSamlOptions
+{
+    public string SpOptionsEntityId { get; init; } = string.Empty;
+    public string SpOptionsModulePath { get; init; } = string.Empty;
+    public string IdentityProviderEntityId { get; init; } = string.Empty;
+    public string IdentityProviderMetadataUrl { get; init; } = string.Empty;
 }
 
 public enum AuthenticationProvider

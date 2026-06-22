@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Konfigo.Authorization;
+using Konfigo.Controllers.Models.Auth;
 using Konfigo.Extensions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -17,10 +18,12 @@ using Sustainsys.Saml2.AspNetCore2;
 namespace Konfigo.Controllers;
 
 [ApiController]
+[Route("auth")]
 public sealed class AuthController : ControllerBase
 {
     private readonly IOptionsMonitor<KonfigoAuthenticationOptions> _authenticationOptions;
     private readonly IOptionsMonitor<KonfigoAuthorizationOptions> _authorizationOptions;
+
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
@@ -34,32 +37,31 @@ public sealed class AuthController : ControllerBase
     }
 
     [AllowAnonymous]
-    [HttpGet("auth/config")]
-    public IActionResult GetConfig()
+    [HttpGet("config")]
+    public ProviderConfiguration GetConfig()
     {
-        var opts = _authenticationOptions.CurrentValue;
-        var provider = opts.Provider;
+        var authenticationOptions = _authenticationOptions.CurrentValue;
+        var provider = authenticationOptions.Provider.ToString().ToLowerInvariant();
 
-        if (provider == AuthenticationProvider.Jwt)
+        return authenticationOptions.Provider switch
         {
-            return Ok(new
+            AuthenticationProvider.Jwt => new ProviderConfiguration
             {
-                provider = "jwt",
-                jwt = new
+                Provider = provider,
+                Jwt = new ProviderConfiguration.JwtOptions
                 {
-                    authorizeUrl = opts.Jwt.AuthorizeUrl,
-                    tokenUrl = opts.Jwt.TokenUrl,
-                    clientId = opts.Jwt.ClientId,
-                    scopes = opts.Jwt.Scopes
+                    AuthorizeUrl = authenticationOptions.Jwt.AuthorizeUrl,
+                    TokenUrl = authenticationOptions.Jwt.TokenUrl,
+                    ClientId = authenticationOptions.Jwt.ClientId,
+                    Scopes = authenticationOptions.Jwt.Scopes
                 }
-            });
-        }
-
-        return Ok(new { provider = provider.ToString().ToLowerInvariant() });
+            },
+            _ => new ProviderConfiguration { Provider = provider },
+        };
     }
 
     [AllowAnonymous]
-    [HttpGet("auth/login")]
+    [HttpGet("login")]
     public Task Login([FromQuery] string? returnUrl)
     {
         var safeReturn = IsSafeReturnUrl(returnUrl) ? returnUrl! : "/";
@@ -71,7 +73,7 @@ public sealed class AuthController : ControllerBase
     }
 
     [Authorize]
-    [HttpGet("auth/logout")]
+    [HttpGet("logout")]
     public async Task Logout([FromQuery] string? returnUrl)
     {
         var safeReturn = IsSafeReturnUrl(returnUrl) ? returnUrl! : "/login";
@@ -90,7 +92,7 @@ public sealed class AuthController : ControllerBase
     }
 
     [Authorize]
-    [HttpGet("auth/me")]
+    [HttpGet("me")]
     public IActionResult Me()
     {
         if (User.Identity?.IsAuthenticated != true)
@@ -101,18 +103,17 @@ public sealed class AuthController : ControllerBase
 
         var value = new
         {
-            id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value,
-            email = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("email")?.Value,
+            id = User.FindFirst(_authenticationOptions.CurrentValue.IdClaimType)?.Value,
+            email = User.FindFirst(_authenticationOptions.CurrentValue.EmailClaimType)?.Value,
             name = User.FindFirst(ClaimTypes.Name)?.Value ?? User.FindFirst("displayName")?.Value,
             roles = User.Identities
                 .SelectMany(identity => User.FindAll(identity.RoleClaimType))
                 .Select(c => c.Value)
-                .Distinct()
-                .ToArray(),
+                .ToHashSet(),
             permissions = _authorizationOptions.CurrentValue.GetPermissions(User)
         };
 
-        _logger.LogCurrentUserCompleted(value.id, value.roles.Length);
+        _logger.LogCurrentUserCompleted(value.id, value.roles.Count);
 
         return Ok(value);
     }

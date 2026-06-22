@@ -43,6 +43,8 @@ public sealed class Startup(IConfiguration configuration)
 
         app.UseForwardedHeaders(forwardedHeadersOptions);
 
+        app.UseApi(configuration);
+
         app.UseRouting();
 
         app.UseAuthentication();

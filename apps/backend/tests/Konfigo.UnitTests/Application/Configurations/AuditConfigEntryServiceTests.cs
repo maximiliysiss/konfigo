@@ -100,7 +100,7 @@ public sealed class AuditConfigEntryServiceTests
         var inner = Substitute.For<IConfigEntryService>();
         var auditRepo = Substitute.For<IAuditLogRepository>();
 
-        var updatedBy = new User(new UserId(Guid.NewGuid().ToString()), "Test User", string.Empty);
+        var updatedBy = new User(new UserId(Guid.NewGuid().ToString()), "Test User", [string.Empty]);
         var serviceId = ServiceId.New();
         var versionId = VersionId.New();
         var request = new SetEntryRequest(

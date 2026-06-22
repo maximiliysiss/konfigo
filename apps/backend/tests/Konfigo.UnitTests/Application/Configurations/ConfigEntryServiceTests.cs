@@ -137,7 +137,7 @@ public sealed class ConfigEntryServiceTests
             ServiceId.New(),
             VersionId.New(),
             [new SetEntryRequest.SetRequest(EntryId.New(), "v", 1)],
-            new User(new UserId(Guid.NewGuid().ToString()), "Test User", string.Empty));
+            new User(new UserId(Guid.NewGuid().ToString()), "Test User", [string.Empty]));
 
         // Act
         var result = await sut.SetAsync(request, CancellationToken.None);
@@ -163,7 +163,7 @@ public sealed class ConfigEntryServiceTests
             service.Id,
             VersionId.New(),
             [new SetEntryRequest.SetRequest(EntryId.New(), "v", 1)],
-            new User(new UserId(Guid.NewGuid().ToString()), "Test User", string.Empty));
+            new User(new UserId(Guid.NewGuid().ToString()), "Test User", [string.Empty]));
 
         // Act
         var act = () => sut.SetAsync(request, CancellationToken.None);
@@ -180,7 +180,7 @@ public sealed class ConfigEntryServiceTests
         var serviceRepo = Substitute.For<IApplicationsRepository>();
 
         var service = TestFakes.BuildService(name: "billing");
-        var updatedBy = new User(new UserId(Guid.NewGuid().ToString()), "Test User", string.Empty);
+        var updatedBy = new User(new UserId(Guid.NewGuid().ToString()), "Test User", [string.Empty]);
         service.Members.Add(updatedBy.Id);
         serviceRepo.GetAsync(Arg.Any<SearchServiceRequest>(), Arg.Any<CancellationToken>())
             .Returns(AsyncEnumerableHelper.From(service));
@@ -216,7 +216,7 @@ public sealed class ConfigEntryServiceTests
         var serviceRepo = Substitute.For<IApplicationsRepository>();
 
         var service = TestFakes.BuildService(name: "billing");
-        var updatedBy = new User(new UserId(Guid.NewGuid().ToString()), "Test User", string.Empty);
+        var updatedBy = new User(new UserId(Guid.NewGuid().ToString()), "Test User", [string.Empty]);
         service.Members.Add(updatedBy.Id);
         serviceRepo.GetAsync(Arg.Any<SearchServiceRequest>(), Arg.Any<CancellationToken>())
             .Returns(AsyncEnumerableHelper.From(service));

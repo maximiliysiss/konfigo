@@ -250,5 +250,5 @@ internal static class TestFakes
         };
     }
 
-    private static User BuildUser() => new(new UserId(Guid.NewGuid().ToString()), string.Empty, string.Empty);
+    private static User BuildUser() => new(new UserId(Guid.NewGuid().ToString()), string.Empty, [string.Empty]);
 }

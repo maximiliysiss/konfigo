@@ -104,7 +104,7 @@ public sealed class TrackingConfigEntryServiceTests
             ServiceId.New(),
             VersionId.New(),
             [],
-            new User(new UserId(Guid.NewGuid().ToString()), "Test User", string.Empty));
+            new User(new UserId(Guid.NewGuid().ToString()), "Test User", [string.Empty]));
 
         // Act
         var result = await sut.SetAsync(request, CancellationToken.None);
@@ -127,7 +127,7 @@ public sealed class TrackingConfigEntryServiceTests
             serviceId,
             versionId,
             [new SetEntryRequest.SetRequest(EntryId.New(), "v", 1)],
-            new User(new UserId(Guid.NewGuid().ToString()), "Test User", string.Empty));
+            new User(new UserId(Guid.NewGuid().ToString()), "Test User", [string.Empty]));
 
         var returned = new[]
         {
