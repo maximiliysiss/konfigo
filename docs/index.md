@@ -1,7 +1,7 @@
 # Konfigo Wiki
 
 [![CI/CD](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml/badge.svg)](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.0.4-blue)](https://github.com/maximiliysiss/konfigo/blob/master/VERSION)
+[![Version](https://img.shields.io/badge/version-0.0.5-blue)](https://github.com/maximiliysiss/konfigo/blob/master/VERSION)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://github.com/maximiliysiss/konfigo/blob/master/LICENSE)
 
 Konfigo is a centralized, real-time configuration management service. It lets you declare

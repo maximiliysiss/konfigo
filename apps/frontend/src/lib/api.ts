@@ -1,5 +1,5 @@
 import { get } from 'svelte/store';
-import { PUBLIC_API_URL } from '$env/static/public';
+import { env } from '$env/dynamic/public';
 import { showAuthUnavailable } from '$lib/stores/availability';
 import { jwtToken } from '$lib/stores/auth';
 
@@ -134,7 +134,7 @@ export function buildUrl(path: string): string {
 		return path;
 	}
 
-	const base = (PUBLIC_API_URL?.trim() || defaultApiBaseUrl).replace(/\/+$/, '');
+	const base = getApiBaseUrl();
 	const normalizedPath = path.startsWith('/') ? path : `/${path}`;
 	return `${base}${normalizedPath}`;
 }
@@ -144,10 +144,14 @@ export function buildBackendUrl(path: string): string {
 		return path;
 	}
 
-	const apiBase = (PUBLIC_API_URL?.trim() || defaultApiBaseUrl).replace(/\/+$/, '');
+	const apiBase = getApiBaseUrl();
 	const backendBase = apiBase.endsWith('/api') ? apiBase.slice(0, -4) : apiBase;
 	const normalizedPath = path.startsWith('/') ? path : `/${path}`;
 	return `${backendBase}${normalizedPath}`;
+}
+
+function getApiBaseUrl(): string {
+	return (env.PUBLIC_API_URL?.trim() || defaultApiBaseUrl).replace(/\/+$/, '');
 }
 
 async function readErrorMessage(response: Response): Promise<string> {

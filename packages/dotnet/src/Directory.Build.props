@@ -2,7 +2,7 @@
   <Import Project="../../../Version.props" Condition="Exists('../../../Version.props')" />
 
   <PropertyGroup>
-    <KonfigoVersion Condition="'$(KonfigoVersion)' == ''">0.0.4</KonfigoVersion>
+    <KonfigoVersion Condition="'$(KonfigoVersion)' == ''">0.0.5</KonfigoVersion>
     <Version Condition="'$(Version)' == ''">$(KonfigoVersion)</Version>
     <PackageVersion Condition="'$(PackageVersion)' == ''">$(KonfigoVersion)</PackageVersion>
     <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">$(KonfigoVersion)</AssemblyVersion>
@@ -30,7 +30,7 @@
     <RepositoryUrl>https://github.com/maximiliysiss/konfigo</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>konfigo;configuration;realtime-config;grpc;options;sdk</PackageTags>
-    <PackageReleaseNotes>Initial 0.0.4 release.</PackageReleaseNotes>
+    <PackageReleaseNotes>Initial 0.0.5 release.</PackageReleaseNotes>
     <Copyright>Copyright (c) Konfigo contributors</Copyright>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>

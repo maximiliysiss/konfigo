@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
-	import { PUBLIC_SIGNALR_URL } from '$env/static/public';
+	import { env } from '$env/dynamic/public';
 	import { page } from '$app/stores';
 	import { HubConnectionBuilder, LogLevel, type HubConnection } from '@microsoft/signalr';
 	import { onMount } from 'svelte';
@@ -1005,7 +1005,7 @@
 		if (!browser) return;
 
 		connectionStatus = 'connecting';
-		const signalrUrl = PUBLIC_SIGNALR_URL || buildBackendUrl('/hubs/config');
+		const signalrUrl = env.PUBLIC_SIGNALR_URL?.trim() || buildBackendUrl('/hubs/config');
 		connection = new HubConnectionBuilder()
 			.withUrl(signalrUrl, { withCredentials: true })
 			.withAutomaticReconnect()

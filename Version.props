@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <KonfigoVersion>0.0.4</KonfigoVersion>
+    <KonfigoVersion>0.0.5</KonfigoVersion>
     <Version>$(KonfigoVersion)</Version>
     <PackageVersion>$(KonfigoVersion)</PackageVersion>
     <AssemblyVersion>$(KonfigoVersion)</AssemblyVersion>

@@ -104,24 +104,24 @@ Build and run:
 
 ```bash
 cd apps/backend
-docker build --build-arg KONFIGO_VERSION=0.0.4 -t konfigo-backend:0.0.4 .
+docker build --build-arg KONFIGO_VERSION=0.0.5 -t konfigo-backend:0.0.5 .
 docker run -p 8080:8080 \
   -e ConnectionStrings__Postgres="Host=db;..." \
   -e ConnectionStrings__Redis="redis:6379" \
   -e Authentication__Provider="Jwt" \
   -e Authentication__Jwt__Authority="https://your-idp" \
   -e Authentication__Jwt__Audience="konfigo" \
-  konfigo-backend:0.0.4
+  konfigo-backend:0.0.5
 ```
 
 ### Frontend
 
 ```bash
 cd apps/frontend
-docker build --build-arg KONFIGO_VERSION=0.0.4 -t konfigo-frontend:0.0.4 .
+docker build --build-arg KONFIGO_VERSION=0.0.5 -t konfigo-frontend:0.0.5 .
 docker run -p 3000:3000 \
   -e PUBLIC_API_URL="https://your-backend" \
-  konfigo-frontend:0.0.4
+  konfigo-frontend:0.0.5
 ```
 
 ### Local dependencies with Docker Compose
