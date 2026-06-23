@@ -2,7 +2,7 @@
   <Import Project="../../Version.props" Condition="Exists('../../Version.props')" />
 
   <PropertyGroup>
-    <KonfigoVersion Condition="'$(KonfigoVersion)' == ''">0.0.5</KonfigoVersion>
+    <KonfigoVersion Condition="'$(KonfigoVersion)' == ''">0.0.6</KonfigoVersion>
     <Version Condition="'$(Version)' == ''">$(KonfigoVersion)</Version>
     <PackageVersion Condition="'$(PackageVersion)' == ''">$(KonfigoVersion)</PackageVersion>
     <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">$(KonfigoVersion)</AssemblyVersion>

@@ -48,10 +48,21 @@ npm run preview    # preview the production build locally
 
 ```bash
 docker build -t konfigo-frontend .
-docker run -p 3000:3000 -e PUBLIC_API_URL=https://your-backend konfigo-frontend
+docker run -p 3000:3000 \
+  -e PUBLIC_API_URL=https://your-backend/api \
+  -e PUBLIC_SIGNALR_URL=https://your-backend/hubs/config \
+  konfigo-frontend
 ```
 
 The image uses `@sveltejs/adapter-node` and runs as a plain Node.js server on port 3000.
+
+## More Information
+
+- Main repository: https://github.com/maximiliysiss/konfigo
+- Full documentation: https://maximiliysiss.github.io/konfigo/
+- Deployment guide: https://github.com/maximiliysiss/konfigo/blob/master/docs/deployment.md
+- Authentication guide: https://github.com/maximiliysiss/konfigo/blob/master/docs/authentication.md
+- Backend API reference: https://github.com/maximiliysiss/konfigo/blob/master/docs/api.md
 
 ## Tech stack
 

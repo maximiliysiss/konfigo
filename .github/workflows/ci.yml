@@ -292,6 +292,14 @@ jobs:
             org.opencontainers.image.version=${{ needs.validate-version.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Update DockerHub description
+        uses: peter-evans/dockerhub-description@v5
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ secrets.DOCKERHUB_USERNAME }}/konfigo-backend
+          readme-filepath: apps/backend/README.md
+          short-description: Konfigo backend API, gRPC stream, and SignalR service
 
   docker-frontend:
     name: Docker · Frontend
@@ -336,3 +344,11 @@ jobs:
             org.opencontainers.image.version=${{ needs.validate-version.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Update DockerHub description
+        uses: peter-evans/dockerhub-description@v5
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ secrets.DOCKERHUB_USERNAME }}/konfigo-frontend
+          readme-filepath: apps/frontend/README.md
+          short-description: Konfigo SvelteKit web UI for configuration management
