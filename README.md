@@ -5,7 +5,7 @@
 # Konfigo
 
 [![CI/CD](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml/badge.svg)](https://github.com/maximiliysiss/konfigo/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.0.3-blue)](VERSION)
+[![Version](https://img.shields.io/badge/version-0.0.4-blue)](VERSION)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](apps/backend/Directory.Build.props)
 [![Go](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go)](packages/go/go.mod)
@@ -51,10 +51,10 @@ konfigo/
 
 ## Versioning
 
-The current cross-project release version is stored in [`VERSION`](VERSION) and is `0.0.3`.
+The current cross-project release version is stored in [`VERSION`](VERSION) and is `0.0.4`.
 The same version is used for the backend application, .NET SDK packages, Python SDK package,
 frontend package metadata, and Docker image labels. Release tags must match this value as
-`0.0.3` or `v0.0.3`.
+`0.0.4` or `v0.0.4`.
 Run `python3 scripts/validate-version.py` to check all duplicated version metadata; CI runs
 the same validation and fails if any copy is out of sync.
 
@@ -105,13 +105,13 @@ Pre-built images are published to DockerHub and GHCR on every GitHub release:
 
 ```
 <DOCKERHUB_USERNAME>/konfigo-backend:latest
-<DOCKERHUB_USERNAME>/konfigo-backend:0.0.3
+<DOCKERHUB_USERNAME>/konfigo-backend:0.0.4
 <DOCKERHUB_USERNAME>/konfigo-frontend:latest
-<DOCKERHUB_USERNAME>/konfigo-frontend:0.0.3
+<DOCKERHUB_USERNAME>/konfigo-frontend:0.0.4
 ghcr.io/<OWNER>/konfigo-backend:latest
-ghcr.io/<OWNER>/konfigo-backend:0.0.3
+ghcr.io/<OWNER>/konfigo-backend:0.0.4
 ghcr.io/<OWNER>/konfigo-frontend:latest
-ghcr.io/<OWNER>/konfigo-frontend:0.0.3
+ghcr.io/<OWNER>/konfigo-frontend:0.0.4
 ```
 
 ## SDK quick start
