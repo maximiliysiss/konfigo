@@ -5,6 +5,7 @@ using Konfigo.Application.Services.Configurations;
 using Konfigo.Application.Services.Configurations.Audit;
 using Konfigo.Application.Services.Configurations.Options;
 using Konfigo.Application.Services.Configurations.Tracking;
+using Konfigo.Application.Services.LocalUsers;
 using Konfigo.Application.Services.Notifications;
 using Konfigo.Application.Services.Notifications.Outbox.Grcp;
 using Konfigo.Application.Services.Updater;
@@ -23,7 +24,8 @@ public static class ServiceCollectionExtensions
         services
             .AddScoped<IApplicationsService, ApplicationsService>()
             .AddScoped<IConfigEntryService, ConfigEntryService>()
-            .AddScoped<IConfigVersionService, ConfigVersionService>();
+            .AddScoped<IConfigVersionService, ConfigVersionService>()
+            .AddScoped<ILocalUsersService, LocalUsersService>();
 
         services
             .Decorate<IConfigEntryService, TrackingConfigEntryService>();

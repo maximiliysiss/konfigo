@@ -40,31 +40,44 @@
 	});
 	const userCanAll = $derived(canAll(currentUser));
 	const currentUserLabel = $derived(currentUser?.email ?? currentUser?.name ?? currentUser?.id ?? '');
-	const signOutHref = $derived(
-		data.authConfig.provider === 'jwt' ? null : buildBackendUrl('/auth/logout?returnUrl=/login')
-	);
+	const useClientSignOut = $derived(data.authConfig.provider === 'jwt' || data.authConfig.provider === 'local');
+	const signOutHref = $derived(useClientSignOut ? null : buildBackendUrl('/auth/logout?returnUrl=/login'));
 
-	function handleJwtSignOut() {
-		jwtToken.set(null);
+	async function handleClientSignOut() {
+		if (data.authConfig.provider === 'jwt') {
+			jwtToken.set(null);
+		} else {
+			try {
+				await fetch(buildBackendUrl('/auth/logout'), { credentials: 'include' });
+			} catch {
+				// ignore network errors, still navigate away
+			}
+		}
 		goto('/login');
 	}
 
 	const navItems = $derived.by(() => {
-		const items: { href: string; label: string; icon: 'grid' | 'plus' }[] = [
+		const items: { href: string; label: string; icon: 'grid' | 'plus' | 'users' }[] = [
 			{ href: '/services', label: 'Services', icon: 'grid' }
 		];
 		if (userCanAll) {
 			items.push({ href: '/services/new', label: 'New Service', icon: 'plus' });
 		}
+		if (userCanAll && data.authConfig.provider === 'local') {
+			items.push({ href: '/users', label: 'Users', icon: 'users' });
+		}
 		return items;
 	});
 
-	function icon(name: 'grid' | 'plus' | 'log-out') {
+	function icon(name: 'grid' | 'plus' | 'log-out' | 'users') {
 		if (name === 'plus') {
 			return 'M8 3v10M3 8h10';
 		}
 		if (name === 'log-out') {
 			return 'M6 3H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h2M10 12l3-4-3-4M13 8H7';
+		}
+		if (name === 'users') {
+			return 'M5.5 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm5 4.5c0-1.7-2.2-3-5-3s-5 1.3-5 3M10.5 7a1.8 1.8 0 1 0 0-3.6M12.5 11.5c0-1.4-1.3-2.5-2.8-2.9';
 		}
 		return 'M3 3h4v4H3zM9 3h4v4H9zM3 9h4v4H3zM9 9h4v4H9z';
 	}
@@ -158,8 +171,8 @@
 					</div>
 					<span class="user-identity-label">{currentUserLabel}</span>
 				</div>
-				{#if data.authConfig.provider === 'jwt'}
-					<button class="topbar-signout" type="button" onclick={handleJwtSignOut}>
+				{#if useClientSignOut}
+					<button class="topbar-signout" type="button" onclick={handleClientSignOut}>
 						<svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" aria-hidden="true">
 							<path d={icon('log-out')} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
 						</svg>

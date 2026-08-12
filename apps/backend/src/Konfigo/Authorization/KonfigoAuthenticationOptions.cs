@@ -13,6 +13,7 @@ public sealed class KonfigoAuthenticationOptions
 
     public KonfigoJwtOptions Jwt { get; init; } = new();
     public KonfigoSamlOptions Saml { get; init; } = new();
+    public KonfigoLocalOptions Local { get; init; } = new();
 }
 
 public sealed class KonfigoJwtOptions
@@ -31,9 +32,16 @@ public sealed class KonfigoSamlOptions
     public string IdentityProviderMetadataUrl { get; init; } = string.Empty;
 }
 
+public sealed class KonfigoLocalOptions
+{
+    public string DefaultAdminUsername { get; init; } = "admin";
+    public string DefaultAdminPassword { get; init; } = "admin";
+}
+
 public enum AuthenticationProvider
 {
     OpenId,
     Saml,
     Jwt,
+    Local,
 }

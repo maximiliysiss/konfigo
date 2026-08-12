@@ -8,7 +8,7 @@ export type AuthUser = {
 	permissions: string[];
 };
 
-export type AuthProvider = 'openid' | 'saml' | 'jwt';
+export type AuthProvider = 'openid' | 'saml' | 'jwt' | 'local';
 
 export const user = writable<AuthUser | null>(null);
 

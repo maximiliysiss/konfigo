@@ -1,8 +1,8 @@
 # Authentication & Authorization
 
-Konfigo supports three authentication providers: **OpenID Connect**, **JWT Bearer**, and **SAML 2.0**.
-The provider is selected by a single `Authentication.Provider` key — everything else is read from
-the corresponding configuration subsection.
+Konfigo supports four authentication providers: **OpenID Connect**, **JWT Bearer**, **SAML 2.0**,
+and **Local** (username/password). The provider is selected by a single `Authentication.Provider`
+key — everything else is read from the corresponding configuration subsection.
 
 ---
 
@@ -15,6 +15,7 @@ On startup the backend reads `Authentication.Provider` and registers one ASP.NET
 | `OpenId` | OpenID Connect (cookie) | Cookie |
 | `Jwt` | JWT Bearer | Stateless (token in `Authorization` header) |
 | `Saml` | SAML 2.0 (cookie) | Cookie |
+| `Local` | Username/password (cookie) | Cookie |
 
 > If the key is not set, `Saml` is used (the hardcoded default in code).
 
@@ -301,6 +302,50 @@ location /saml2/ {
 
 ---
 
+## Local (username/password)
+
+Self-hosted username/password authentication with no external identity provider. Users are stored
+in the `public.local_users` table and authenticated via a server-side cookie session, backed by
+PBKDF2 (SHA-256, 310k iterations) password hashing.
+
+### Configuration
+
+```json
+{
+  "Authentication": {
+    "Provider": "Local",
+    "Local": {
+      "DefaultAdminUsername": "admin",
+      "DefaultAdminPassword": "change-me"
+    }
+  }
+}
+```
+
+| Field | Default | Description |
+|-------|---------|--------------|
+| `DefaultAdminUsername` | `admin` | Username of the admin account seeded on first startup |
+| `DefaultAdminPassword` | `admin` | Password for the seeded admin account. Only applied the first time the account is created — later password changes made through the UI are not overwritten by this setting on subsequent restarts |
+
+On every startup, if `Provider` is `Local` and no user with `DefaultAdminUsername` exists yet, the
+backend creates it with the `admin` role. **Change `DefaultAdminPassword` before first deploying
+to production** — leaving the default (`admin`) creates a predictable admin credential.
+
+### Managing users
+
+Once signed in as an admin, open **Users** in the top navigation (only shown for admins when the
+Local provider is active) to create, edit, or delete accounts. Each user has:
+
+- **Username** and **password** (used to sign in)
+- **Role** — `admin` (maps to the `canAll` policy) or `developer` (maps to `canChange`)
+
+Admins cannot delete their own account through the UI, to avoid locking everyone out.
+
+The management API lives at `api/users` (`GET`/`POST`/`PUT {username}`/`DELETE {username}`),
+gated by the `canAll` policy and only enabled while `Provider` is `Local`.
+
+---
+
 ## Authorization
 
 Regardless of the provider, authorization works by mapping roles from identity claims to Konfigo policies.
@@ -395,7 +440,24 @@ All three providers start simultaneously with `docker compose up -d`. To switch,
     }
     ```
 
-Test users are the same across all three providers:
+=== "Local (username/password)"
+
+    ```json
+    {
+      "Authentication": {
+        "Provider": "Local",
+        "Local": {
+          "DefaultAdminUsername": "admin",
+          "DefaultAdminPassword": "admin"
+        }
+      }
+    }
+    ```
+
+    No external IdP required. Sign in with `admin` / `admin` (or whatever `DefaultAdminPassword`
+    is set to), then manage additional accounts from the **Users** page.
+
+Test users are the same across the OpenID Connect, JWT, and SAML providers:
 
 | User | Password | Roles | Konfigo policies |
 |------|----------|-------|-----------------|
@@ -451,6 +513,14 @@ double-underscore (`__`) nesting convention:
     Authentication__Saml__SpOptionsModulePath=/saml2
     Authentication__Saml__IdentityProviderEntityId=https://your-idp.example.com/saml2/idp/metadata
     Authentication__Saml__IdentityProviderMetadataUrl=https://your-idp.example.com/saml2/idp/metadata
+    ```
+
+=== "Local"
+
+    ```bash
+    Authentication__Provider=Local
+    Authentication__Local__DefaultAdminUsername=admin
+    Authentication__Local__DefaultAdminPassword=a-strong-password
     ```
 
 Authorization policies via environment variables (roles use array index notation):

@@ -172,4 +172,40 @@ internal static partial class LoggerExtensions
 
     [LoggerMessage(EventId = 1608, Level = LogLevel.Information, Message = "Subscriber deleted. ServiceId: {ServiceId}, VersionId: {VersionId}, SubscriberCount: {SubscriberCount}")]
     public static partial void LogSubscriberDeleted(this ILogger logger, ServiceId serviceId, VersionId versionId, int subscriberCount);
+
+    [LoggerMessage(EventId = 1700, Level = LogLevel.Debug, Message = "Local user create started. Username: {Username}")]
+    public static partial void LogLocalUserCreateStarted(this ILogger logger, string username);
+
+    [LoggerMessage(EventId = 1701, Level = LogLevel.Information, Message = "Local user created. Username: {Username}, Role: {Role}")]
+    public static partial void LogLocalUserCreated(this ILogger logger, string username, string role);
+
+    [LoggerMessage(EventId = 1702, Level = LogLevel.Warning, Message = "Local user already exists. Username: {Username}")]
+    public static partial void LogLocalUserAlreadyExists(this ILogger logger, string username);
+
+    [LoggerMessage(EventId = 1703, Level = LogLevel.Warning, Message = "Local user invalid role. Username: {Username}, Role: {Role}")]
+    public static partial void LogLocalUserInvalidRole(this ILogger logger, string username, string role);
+
+    [LoggerMessage(EventId = 1704, Level = LogLevel.Debug, Message = "Local user update started. Username: {Username}")]
+    public static partial void LogLocalUserUpdateStarted(this ILogger logger, string username);
+
+    [LoggerMessage(EventId = 1705, Level = LogLevel.Information, Message = "Local user updated. Username: {Username}")]
+    public static partial void LogLocalUserUpdated(this ILogger logger, string username);
+
+    [LoggerMessage(EventId = 1706, Level = LogLevel.Warning, Message = "Local user not found. Username: {Username}")]
+    public static partial void LogLocalUserNotFound(this ILogger logger, string username);
+
+    [LoggerMessage(EventId = 1707, Level = LogLevel.Debug, Message = "Local user delete started. Username: {Username}")]
+    public static partial void LogLocalUserDeleteStarted(this ILogger logger, string username);
+
+    [LoggerMessage(EventId = 1708, Level = LogLevel.Information, Message = "Local user deleted. Username: {Username}")]
+    public static partial void LogLocalUserDeleted(this ILogger logger, string username);
+
+    [LoggerMessage(EventId = 1709, Level = LogLevel.Warning, Message = "Local user login failed. Username: {Username}")]
+    public static partial void LogLocalUserLoginFailed(this ILogger logger, string username);
+
+    [LoggerMessage(EventId = 1710, Level = LogLevel.Information, Message = "Local user login succeeded. Username: {Username}")]
+    public static partial void LogLocalUserLoginSucceeded(this ILogger logger, string username);
+
+    [LoggerMessage(EventId = 1711, Level = LogLevel.Information, Message = "Local user seeded. Username: {Username}")]
+    public static partial void LogLocalUserSeeded(this ILogger logger, string username);
 }

@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Konfigo.Extensions;
 using Konfigo.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
@@ -13,6 +14,7 @@ public static class Program
         var host = CreateHostBuilder(args).Build();
 
         await host.RunMigrateAsync(CancellationToken.None);
+        await host.SeedLocalAdminAsync(CancellationToken.None);
 
         await host.RunAsync();
     }

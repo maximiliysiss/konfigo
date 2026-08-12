@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { buildBackendUrl } from '$lib/api';
+	import { buildBackendUrl, getApiErrorMessage, localLogin } from '$lib/api';
 	import type { AuthConfig } from '$lib/api';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
 
 	type Data = { authConfig: AuthConfig };
 	let { data } = $props<{ data: Data }>();
@@ -14,6 +17,25 @@
 	});
 
 	const loginHref = $derived(buildBackendUrl(`/auth/login?returnUrl=${encodeURIComponent(returnUrl)}`));
+
+	let localUsername = $state('');
+	let localPassword = $state('');
+	let localError = $state('');
+	let localSubmitting = $state(false);
+
+	async function submitLocalLogin(event: SubmitEvent) {
+		event.preventDefault();
+		localError = '';
+		localSubmitting = true;
+		try {
+			await localLogin(localUsername, localPassword);
+			await goto(returnUrl, { invalidateAll: true });
+		} catch (e) {
+			localError = getApiErrorMessage(e, 'Failed to sign in');
+		} finally {
+			localSubmitting = false;
+		}
+	}
 
 	function base64UrlEncode(bytes: Uint8Array): string {
 		return btoa(String.fromCharCode(...bytes))
@@ -84,6 +106,15 @@
 				</svg>
 				<span>Login by SSO</span>
 			</button>
+		{:else if data.authConfig.provider === 'local'}
+			<form class="mt-6 space-y-4" onsubmit={submitLocalLogin}>
+				<Input id="local-username" label="Username" placeholder="admin" bind:value={localUsername} />
+				<Input id="local-password" type="password" label="Password" placeholder="••••••••" bind:value={localPassword} />
+				{#if localError}
+					<p class="text-[13px] text-[var(--danger)]">{localError}</p>
+				{/if}
+				<Button type="submit" size="lg" className="w-full" loading={localSubmitting}>Sign in</Button>
+			</form>
 		{:else}
 			<a class="login-sso-button mt-6" href={loginHref}>
 				<svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" aria-hidden="true">

@@ -11,7 +11,7 @@ export type PageResponse<T> = {
 };
 
 export type AuthConfig = {
-	provider: 'openid' | 'saml' | 'jwt';
+	provider: 'openid' | 'saml' | 'jwt' | 'local';
 	jwt?: {
 		authorizeUrl: string;
 		tokenUrl: string;
@@ -19,6 +19,19 @@ export type AuthConfig = {
 		scopes: string;
 	};
 };
+
+export async function localLogin(username: string, password: string): Promise<void> {
+	const response = await fetch(buildBackendUrl('/auth/local/login'), {
+		method: 'POST',
+		credentials: 'include',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ username, password })
+	});
+
+	if (!response.ok) {
+		throw new ApiError(response.status, response.status === 401 ? 'Invalid username or password' : await readErrorMessage(response));
+	}
+}
 
 export async function fetchAuthConfig(): Promise<AuthConfig> {
 	const response = await fetch(buildBackendUrl('/auth/config'));
@@ -83,6 +96,37 @@ export type ConfigEntryContract = {
 	createdAt: string;
 	updatedAt: string | null;
 };
+
+export type LocalUserRole = 'admin' | 'developer';
+
+export type LocalUserContract = {
+	username: string;
+	role: LocalUserRole;
+	createdAt: string;
+	updatedAt: string | null;
+};
+
+export async function fetchLocalUsers(): Promise<LocalUserContract[]> {
+	return apiRequest<LocalUserContract[]>('/users');
+}
+
+export async function createLocalUser(username: string, password: string, role: LocalUserRole): Promise<LocalUserContract> {
+	return apiRequest<LocalUserContract>('/users', {
+		method: 'POST',
+		body: JSON.stringify({ username, password, role })
+	});
+}
+
+export async function updateLocalUser(username: string, changes: { password?: string; role?: LocalUserRole }): Promise<LocalUserContract> {
+	return apiRequest<LocalUserContract>(`/users/${encodeURIComponent(username)}`, {
+		method: 'PUT',
+		body: JSON.stringify(changes)
+	});
+}
+
+export async function deleteLocalUser(username: string): Promise<void> {
+	await apiRequest<void>(`/users/${encodeURIComponent(username)}`, { method: 'DELETE' });
+}
 
 export type AuditLogContract = {
 	id: string;

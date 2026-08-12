@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
+using Konfigo.Application.Services.LocalUsers;
 using Konfigo.Authorization;
 using Konfigo.Controllers.Models.Auth;
 using Konfigo.Extensions;
@@ -23,16 +26,19 @@ public sealed class AuthController : ControllerBase
 {
     private readonly IOptionsMonitor<KonfigoAuthenticationOptions> _authenticationOptions;
     private readonly IOptionsMonitor<KonfigoAuthorizationOptions> _authorizationOptions;
+    private readonly ILocalUsersService _localUsersService;
 
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
         IOptionsMonitor<KonfigoAuthenticationOptions> authenticationOptions,
         IOptionsMonitor<KonfigoAuthorizationOptions> authorizationOptions,
+        ILocalUsersService localUsersService,
         ILogger<AuthController> logger)
     {
         _authenticationOptions = authenticationOptions;
         _authorizationOptions = authorizationOptions;
+        _localUsersService = localUsersService;
         _logger = logger;
     }
 
@@ -64,12 +70,50 @@ public sealed class AuthController : ControllerBase
     [HttpGet("login")]
     public Task Login([FromQuery] string? returnUrl)
     {
+        var provider = _authenticationOptions.CurrentValue.Provider;
+        if (provider is AuthenticationProvider.Jwt or AuthenticationProvider.Local)
+        {
+            return Task.CompletedTask;
+        }
+
         var safeReturn = IsSafeReturnUrl(returnUrl) ? returnUrl! : "/";
         _logger.LogAuthenticationLoginChallengeStarted(returnUrl, safeReturn);
 
         return HttpContext.ChallengeAsync(
-            scheme: GetChallengeScheme(_authenticationOptions.CurrentValue.Provider),
+            scheme: GetChallengeScheme(provider),
             properties: new AuthenticationProperties { RedirectUri = safeReturn });
+    }
+
+    [AllowAnonymous]
+    [HttpPost("local/login")]
+    public async Task<IActionResult> LocalLogin([FromBody] LocalLoginRequest request, CancellationToken cancellationToken)
+    {
+        if (_authenticationOptions.CurrentValue.Provider != AuthenticationProvider.Local)
+        {
+            return NotFound();
+        }
+
+        var user = await _localUsersService.ValidateCredentialsAsync(request.Username, request.Password, cancellationToken);
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        var authenticationOptions = _authenticationOptions.CurrentValue;
+
+        var claims = new List<Claim>
+        {
+            new(authenticationOptions.IdClaimType, user.Username),
+            new(authenticationOptions.EmailClaimType, user.Username),
+            new(ClaimTypes.Name, user.Username),
+            new(ClaimTypes.Role, user.Role),
+        };
+
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+
+        return Ok();
     }
 
     [Authorize]
@@ -86,6 +130,12 @@ public sealed class AuthController : ControllerBase
         }
 
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+        if (provider == AuthenticationProvider.Local)
+        {
+            return;
+        }
+
         await HttpContext.SignOutAsync(
             scheme: GetChallengeScheme(provider),
             properties: new AuthenticationProperties { RedirectUri = safeReturn });

@@ -47,6 +47,7 @@ public static class ServiceCollectionExtensions
             AuthenticationProvider.OpenId => AddOpenId(),
             AuthenticationProvider.Saml => AddSaml(),
             AuthenticationProvider.Jwt => AddJwt(),
+            AuthenticationProvider.Local => AddLocal(),
             _ => throw new InvalidOperationException("No authentication provider configured.")
         };
 
@@ -89,6 +90,19 @@ public static class ServiceCollectionExtensions
             services
                 .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(jwtOptions => configuration.GetSection($"{KonfigoAuthenticationOptions.SectionName}:Jwt").Bind(jwtOptions));
+
+            return services;
+        }
+
+        IServiceCollection AddLocal()
+        {
+            services
+                .AddAuthentication(authenticationOptions =>
+                {
+                    authenticationOptions.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                    authenticationOptions.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                })
+                .AddCookie();
 
             return services;
         }

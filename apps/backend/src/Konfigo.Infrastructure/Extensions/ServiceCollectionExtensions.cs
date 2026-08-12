@@ -34,7 +34,8 @@ public static class ServiceCollectionExtensions
             .AddScoped<IConfigEntryRepository, ConfigEntryRepository>()
             .AddScoped<IConfigVersionsRepository, ConfigVersionsRepository>()
             .AddScoped<IApplicationsRepository, ApplicationRepository>()
-            .AddScoped<IAuditLogRepository, AuditLogsRepository>();
+            .AddScoped<IAuditLogRepository, AuditLogsRepository>()
+            .AddScoped<ILocalUsersRepository, LocalUsersRepository>();
 
         services
             .TryAddSingleton(ConfigureLock);
