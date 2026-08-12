@@ -106,10 +106,14 @@ public sealed class AuthController : ControllerBase
             new(authenticationOptions.IdClaimType, user.Username),
             new(authenticationOptions.EmailClaimType, user.Username),
             new(ClaimTypes.Name, user.Username),
-            new(ClaimTypes.Role, user.Role),
+            new(authenticationOptions.RoleClaimType, user.Role),
         };
 
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var identity = new ClaimsIdentity(
+            claims,
+            authenticationType: CookieAuthenticationDefaults.AuthenticationScheme,
+            nameType: ClaimTypes.Name,
+            roleType: authenticationOptions.RoleClaimType);
 
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
 
