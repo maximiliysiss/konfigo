@@ -35,7 +35,7 @@ public sealed class CreateServiceTests : IAsyncLifetime
             Name = $"svc-{Guid.NewGuid():N}",
             Description = "Test service",
             RepositoryUrl = "https://gitlab.com/test/repo",
-            ContactEmail = "owner@pnlfin.tech",
+            ContactEmail = "owner@example.com",
         };
 
         // Act

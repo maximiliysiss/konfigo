@@ -40,7 +40,7 @@ public sealed class UpdateServiceTests : IAsyncLifetime
             Name = $"svc-renamed-{Guid.NewGuid():N}",
             Description = "updated",
             RepositoryUrl = "https://gitlab.com/test/renamed",
-            ContactEmail = "owner2@pnlfin.tech",
+            ContactEmail = "owner2@example.com",
         };
 
         // Act
