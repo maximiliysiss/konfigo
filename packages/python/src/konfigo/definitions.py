@@ -93,7 +93,34 @@ def discover_definitions(*modules_or_classes: Any) -> tuple[ClassDefinition, ...
             if definition is not None and definition.options:
                 definitions.append(definition)
 
+    validate_definitions(definitions)
+
     return tuple(definitions)
+
+
+class ConfigKeyCollisionError(ValueError):
+    """Raised when the same config key is declared by several groups with different value types."""
+
+    def __init__(self, collisions: Sequence[str]) -> None:
+        self.collisions = tuple(collisions)
+        super().__init__("Konfigo config key collisions detected:\n" + "\n".join(self.collisions))
+
+
+def validate_definitions(definitions: Iterable[ClassDefinition]) -> None:
+    declarations: dict[str, list[tuple[ValueType, type[Any]]]] = {}
+    for definition in definitions:
+        for option in definition.options:
+            declarations.setdefault(option.key, []).append((option.type, definition.type))
+
+    collisions = [
+        f"Key '{key}' is declared with different types: "
+        + ", ".join(f"{value_type.name} in {owner.__module__}.{owner.__qualname__}" for value_type, owner in items)
+        for key, items in declarations.items()
+        if len({value_type for value_type, _ in items}) > 1
+    ]
+
+    if collisions:
+        raise ConfigKeyCollisionError(collisions)
 
 
 def definition_from_class(cls: type[Any]) -> ClassDefinition | None:

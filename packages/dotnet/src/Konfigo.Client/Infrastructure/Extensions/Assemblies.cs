@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Konfigo.Abstraction.Attributes;
 using Konfigo.Client.Extensions;
+using Konfigo.Client.Infrastructure.Validation;
 using Konfigo.Client.Models;
 using ValueType = Konfigo.Client.Grpc.ValueType;
 
@@ -11,18 +12,20 @@ namespace Konfigo.Client.Infrastructure.Extensions;
 
 internal static class Assemblies
 {
-    private static readonly ClassDefinition[] _definitions;
+    private static readonly Lazy<ClassDefinition[]> _definitions = new(Discover);
 
-    static Assemblies()
+    private static ClassDefinition[] Discover()
     {
-        _definitions = AppDomain.CurrentDomain.GetAssemblies()
+        var definitions = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(c => c.GetTypes())
             .Where(c => c is { IsClass: true, IsAbstract: false } && c.HasCustomAttribute<ConfigGroupAttribute>())
             .Select(MapClass)
             .Where(c => c.Options is not [])
             .ToArray();
 
-        return;
+        ClassDefinitionsValidator.Validate(definitions);
+
+        return definitions;
 
         static ClassDefinition MapClass(Type type)
         {
@@ -108,5 +111,5 @@ internal static class Assemblies
         }
     }
 
-    public static ClassDefinition[] GetDefinitions() => _definitions;
+    public static ClassDefinition[] GetDefinitions() => _definitions.Value;
 }

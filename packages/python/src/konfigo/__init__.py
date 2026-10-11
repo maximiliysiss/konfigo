@@ -2,11 +2,13 @@ from konfigo.client import KonfigoClient
 from konfigo.binding import bind_config, parse_value
 from konfigo.definitions import (
     ClassDefinition,
+    ConfigKeyCollisionError,
     ConfigKeyMetadata,
     OptionDefinition,
     config_group,
     config_key,
     discover_definitions,
+    validate_definitions,
 )
 from konfigo.models import (
     ConfigEntry,
@@ -26,6 +28,7 @@ from konfigo.transport import InitialConfigTransport, RealtimeConfigTransport
 __all__ = [
     "ClassDefinition",
     "ConfigEntry",
+    "ConfigKeyCollisionError",
     "ConfigKeyMetadata",
     "CreateVersionRequest",
     "CreateVersionResponse",
@@ -46,4 +49,5 @@ __all__ = [
     "config_key",
     "discover_definitions",
     "parse_value",
+    "validate_definitions",
 ]

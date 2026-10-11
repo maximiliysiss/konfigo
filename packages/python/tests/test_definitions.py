@@ -2,7 +2,9 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
 
-from konfigo import ValueType, config_group, config_key, discover_definitions
+import pytest
+
+from konfigo import ConfigKeyCollisionError, ValueType, config_group, config_key, discover_definitions
 
 
 class TestEnum(Enum):
@@ -62,3 +64,37 @@ def test_custom_group_and_key_metadata():
     assert option.name == "Value"
     assert option.description == "Option"
     assert option.default_value == "7"
+
+
+@config_group(key="Shared")
+@dataclass
+class SharedNumberOptions:
+    value: int = config_key()
+
+
+@config_group(key="Shared")
+@dataclass
+class SharedFloatOptions:
+    value: float = config_key()
+
+
+@config_group(key="Shared")
+@dataclass
+class SharedStringOptions:
+    value: str = config_key()
+
+
+def test_discover_definitions_allows_same_key_with_same_type():
+    definitions = discover_definitions(SharedNumberOptions, SharedFloatOptions)
+
+    assert len(definitions) == 2
+
+
+def test_discover_definitions_raises_on_key_type_collision():
+    with pytest.raises(ConfigKeyCollisionError) as error:
+        discover_definitions(SharedNumberOptions, SharedStringOptions)
+
+    (collision,) = error.value.collisions
+    assert "Shared:value" in collision
+    assert "NUMBER in" in collision and "SharedNumberOptions" in collision
+    assert "STRING in" in collision and "SharedStringOptions" in collision

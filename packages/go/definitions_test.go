@@ -1,6 +1,8 @@
 package konfigo
 
 import (
+	"errors"
+	"strings"
 	"testing"
 	"time"
 )
@@ -105,4 +107,47 @@ func assertOption(t *testing.T, option OptionDefinition, valueType ValueType, de
 
 func ptr(value string) *string {
 	return &value
+}
+
+type collisionNumberOptions struct {
+	Group `konfigo:"key=Shared"`
+	Value int `konfigo:"key"`
+}
+
+type collisionStringOptions struct {
+	Group `konfigo:"key=Shared"`
+	Value string `konfigo:"key"`
+}
+
+type collisionSameTypeOptions struct {
+	Group `konfigo:"key=Shared"`
+	Value int64 `konfigo:"key"`
+}
+
+func TestDiscoverDefinitionsAllowsSameKeyWithSameType(t *testing.T) {
+	definitions, err := DiscoverDefinitions(collisionNumberOptions{}, collisionSameTypeOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(definitions) != 2 {
+		t.Fatalf("expected two definitions, got %d", len(definitions))
+	}
+}
+
+func TestDiscoverDefinitionsFailsOnKeyTypeCollision(t *testing.T) {
+	_, err := DiscoverDefinitions(collisionNumberOptions{}, collisionStringOptions{})
+
+	var collisionErr *ConfigKeyCollisionError
+	if !errors.As(err, &collisionErr) {
+		t.Fatalf("expected ConfigKeyCollisionError, got %v", err)
+	}
+	if len(collisionErr.Collisions) != 1 {
+		t.Fatalf("expected one collision, got %#v", collisionErr.Collisions)
+	}
+	message := collisionErr.Collisions[0]
+	for _, expected := range []string{`"Shared:Value"`, "Number", "String", "collisionNumberOptions", "collisionStringOptions"} {
+		if !strings.Contains(message, expected) {
+			t.Fatalf("expected %q in %q", expected, message)
+		}
+	}
 }

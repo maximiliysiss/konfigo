@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Google.Protobuf.WellKnownTypes;
+using Grpc.Core;
 using Grpc.Net.Client;
 using Konfigo.Application.Services.Updater;
 using Konfigo.Application.Services.Updater.Models;
@@ -194,6 +195,67 @@ public sealed class RealtimeConfigGrpcServiceTests : IAsyncLifetime
         config.Entries.Should().HaveCount(2);
         config.Entries.Should().Contain(e => e.Key == "feature.grpc" && e.Value == "true" && e.Generation == 1);
         config.Entries.Should().Contain(e => e.Key == "feature.limit" && e.Value == "10" && e.Generation == 1);
+    }
+
+    [Fact]
+    public async Task CreateVersion_WhenKeyDeclaredWithDifferentTypes_ShouldReturnInvalidArgument()
+    {
+        // Arrange
+        var serviceId = await InsertServiceAsync();
+        var versionLabel = $"v-grpc-collision-{Guid.NewGuid():N}";
+
+        using var channel = CreateGrpcChannel();
+        var client = new RealtimeConfigGrpcService.RealtimeConfigGrpcServiceClient(channel);
+
+        var request = new CreateVersionRequest
+        {
+            ServiceId = serviceId.ToString(),
+            Version = versionLabel,
+            Classes =
+            {
+                new CreateVersionRequest.Types.ClassEntry
+                {
+                    Name = "First",
+                    Entries =
+                    {
+                        new CreateVersionRequest.Types.ClassEntry.Types.ConfigEntry
+                        {
+                            Key = "Shared:Value",
+                            Name = "Value",
+                            ValueType = GrpcValueType.Number,
+                        },
+                    },
+                },
+                new CreateVersionRequest.Types.ClassEntry
+                {
+                    Name = "Second",
+                    Entries =
+                    {
+                        new CreateVersionRequest.Types.ClassEntry.Types.ConfigEntry
+                        {
+                            Key = "Shared:Value",
+                            Name = "Value",
+                            ValueType = GrpcValueType.String,
+                        },
+                    },
+                },
+            },
+        };
+
+        // Act
+        var act = async () => await client.CreateVersionAsync(request);
+
+        // Assert
+        var exception = await act.Should().ThrowAsync<RpcException>();
+        exception.Which.StatusCode.Should().Be(StatusCode.InvalidArgument);
+        exception.Which.Status.Detail.Should().Contain("Shared:Value");
+
+        var exists = await client.IsVersionExistsAsync(new IsVersionExistRequest
+        {
+            ServiceId = serviceId.ToString(),
+            Version = versionLabel,
+        });
+        exists.VersionId.Should().BeNull();
     }
 
     [Fact]

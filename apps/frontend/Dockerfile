@@ -6,7 +6,7 @@ COPY . .
 RUN npm run build
 
 FROM node:22-alpine
-ARG KONFIGO_VERSION=0.0.7
+ARG KONFIGO_VERSION=0.0.8
 LABEL org.opencontainers.image.version=$KONFIGO_VERSION
 ENV KONFIGO_VERSION=$KONFIGO_VERSION
 WORKDIR /app

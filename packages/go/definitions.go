@@ -40,7 +40,69 @@ func DiscoverDefinitions(values ...any) ([]ClassDefinition, error) {
 		}
 	}
 
+	if err := ValidateDefinitions(definitions); err != nil {
+		return nil, err
+	}
+
 	return definitions, nil
+}
+
+// ConfigKeyCollisionError reports config keys declared by several groups with different value types.
+type ConfigKeyCollisionError struct {
+	Collisions []string
+}
+
+func (e *ConfigKeyCollisionError) Error() string {
+	return "konfigo: config key collisions detected:\n" + strings.Join(e.Collisions, "\n")
+}
+
+// ValidateDefinitions fails when the same config key is declared with different value types.
+func ValidateDefinitions(definitions []ClassDefinition) error {
+	type declaration struct {
+		valueType ValueType
+		owner     string
+	}
+
+	var keys []string
+	declarations := map[string][]declaration{}
+	for _, definition := range definitions {
+		owner := definition.Key
+		if definition.Type != nil {
+			owner = definition.Type.String()
+		}
+		for _, option := range definition.Options {
+			if _, ok := declarations[option.Key]; !ok {
+				keys = append(keys, option.Key)
+			}
+			declarations[option.Key] = append(declarations[option.Key], declaration{valueType: option.Type, owner: owner})
+		}
+	}
+
+	var collisions []string
+	for _, key := range keys {
+		items := declarations[key]
+		conflicting := false
+		for _, item := range items[1:] {
+			if item.valueType != items[0].valueType {
+				conflicting = true
+				break
+			}
+		}
+		if !conflicting {
+			continue
+		}
+
+		parts := make([]string, 0, len(items))
+		for _, item := range items {
+			parts = append(parts, fmt.Sprintf("%s in %s", valueTypeName(item.valueType), item.owner))
+		}
+		collisions = append(collisions, fmt.Sprintf("key %q is declared with different types: %s", key, strings.Join(parts, ", ")))
+	}
+
+	if len(collisions) > 0 {
+		return &ConfigKeyCollisionError{Collisions: collisions}
+	}
+	return nil
 }
 
 func DefinitionFromStruct(value any) (ClassDefinition, bool, error) {
@@ -184,6 +246,29 @@ func parseValueType(value string) (ValueType, error) {
 		return ValueTypeJSON, nil
 	default:
 		return ValueTypeUnknown, fmt.Errorf("unknown value type %q", value)
+	}
+}
+
+func valueTypeName(valueType ValueType) string {
+	switch valueType {
+	case ValueTypeString:
+		return "String"
+	case ValueTypeBoolean:
+		return "Boolean"
+	case ValueTypeDateTime:
+		return "DateTime"
+	case ValueTypeTimeSpan:
+		return "TimeSpan"
+	case ValueTypeEnum:
+		return "Enum"
+	case ValueTypeNumber:
+		return "Number"
+	case ValueTypeArray:
+		return "Array"
+	case ValueTypeJSON:
+		return "Json"
+	default:
+		return "Unknown"
 	}
 }
 

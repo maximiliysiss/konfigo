@@ -134,6 +134,8 @@ public class RealtimeConfigGrpcService : Client.Grpc.RealtimeConfigGrpcService.R
             request.Version,
             request.Classes.Sum(c => c.Entries.Count));
 
+        EnsureNoKeyCollisions(request);
+
         var generateVersionRequest = new GenerateVersionRequest(
             ServiceId: serviceId,
             VersionLabel: request.Version,
@@ -168,6 +170,21 @@ public class RealtimeConfigGrpcService : Client.Grpc.RealtimeConfigGrpcService.R
                 EnumDefinition: c.EnumValues,
                 GroupDescription: entry.Description,
                 GroupName: entry.Name);
+        }
+    }
+
+    private static void EnsureNoKeyCollisions(CreateVersionRequest request)
+    {
+        var collisions = request.Classes
+            .SelectMany(c => c.Entries.Select(e => (Class: c.Name, Entry: e)))
+            .GroupBy(x => x.Entry.Key)
+            .Where(g => g.Select(x => x.Entry.ValueType).Distinct().Skip(1).Any())
+            .Select(g => $"Key '{g.Key}' is declared with different types: {string.Join(", ", g.Select(x => $"{x.Entry.ValueType} in {x.Class}"))}")
+            .ToArray();
+
+        if (collisions is not [])
+        {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, string.Join("; ", collisions)));
         }
     }
 
